@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+#| label: setup
+#| echo: false
+#| eval: true
+
+
+
+```
+
+library(survival)
+library(lubridate)
+library(survminer)
+library(tidyverse)
+
+lung <- survival::lung
+lung
+
+glimpse(lung)
+
+# kaplan-meier method
+f1 <- survfit(Surv(time, status) ~ 1, data = lung)
+str(f1)
+glimpse(f1)
+f1_tibble <- tibble(n = f1$n,
+                    time = f1$time,
+                    n_risk = f1$n.risk,
+                    n_event = f1$n.event,
+                    n_censor = f1$n.censor,
+                    surv = f1$surv,
+                    se = f1$std.err,
+                    cum_hazard = f1$cumhaz,
+                    stan_c_hazard = f1$std.chaz,
+                    lower_ci = f1$lower,
+                    upper_ci = f1$upper) %>% 
+  janitor::clean_names()
+
+f1_tibble
+
+f1_tibble %>% 
+  pivot_longer(c(surv, lower_ci, upper_ci),
+               names_to = 'term',
+               values_to = 'survival') %>% 
+  ggplot(aes(x = time, y = survival)) + 
+  geom_line(aes(color = term, linetype = term), size = 1.25) +
+  geom_point(data = . %>% filter(term == 'surv', n_censor != 0), color = 'red', alpha = .3) + 
+  scale_color_manual(values = c('gray70', 'dodgerblue', 'gray70')) + 
+  scale_linetype_manual(values = c(3, 1, 3)) + 
+  theme_light() +
+  theme(legend.position = 'none')
+
+ggsurvplot(fit = survfit(Surv(time, status) ~ 1, data = lung),
+           xlab = 'Days',
+           ylab = 'Overall Survival Probability')
+
+f1_summary <- summary(f1, times = 365)
+f1_summary
+
+# 1 year probability of survival in the study is 41% (survival rate)
+
+sur_diff <- survdiff(Surv(time, status) ~ sex, data = lung)
+sur_diff
+
+survival_p <- function(object){
+  answer <- 1 - stats::pchisq(object$chisq, length(object$n) - 1)
+  
+  round(answer, 3)
+
+}
+
+survival_p(sur_diff)
+
+ecog_diff <- survdiff(Surv(time, status) ~ ph.ecog, data = lung)
+survival_p(ecog_diff)
+
+# cox regression
+cox_find <- coxph(Surv(time, status) ~ sex, data = lung)
+cox_find  
+

@@ -1,0 +1,846 @@
+---
+title: "Formula 1 Analyses"
+format: html
+---
+
+```{python}
+import pandas as pd
+import numpy as np
+import plotnine as pn
+from pyhere import here
+from janitor import clean_names
+```
+
+```{python}
+constructor_result = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructor_results.csv')
+constructor_standing = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructor_standings.csv')
+races = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/races.csv')
+constructors = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructors.csv')
+driver_standing = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/driver_standings.csv')
+drivers = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/drivers.csv')
+lap_times = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/lap_times.csv')
+pitstop = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/pit_stops.csv')
+qualify = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/qualifying.csv')
+seasons = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/seasons.csv')
+results = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/results.csv')
+status = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/status.csv')
+circuits = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/circuits.csv')
+```
+
+```{python}
+
+constructor_result = constructor_result.clean_names(case_type = 'snake')
+constructor_standing = constructor_standing.clean_names(case_type = 'snake')
+races = races.clean_names(case_type = 'snake')
+constructors = constructors.clean_names(case_type = 'snake')
+driver_standing = driver_standing.clean_names(case_type = 'snake')
+drivers = drivers.clean_names(case_type = 'snake')
+lap_times = lap_times.clean_names(case_type = 'snake')
+pitstop = pitstop.clean_names(case_type = 'snake')
+qualify = qualify.clean_names(case_type = 'snake')
+seasons = seasons.clean_names(case_type = 'snake')
+results = results.clean_names(case_type = 'snake')
+status = status.clean_names(case_type = 'snake')
+circuits = circuits.clean_names(case_type = 'snake')
+```
+
+```{python}
+drivers.columns
+drivers.head()
+
+drivers['nationality'].value_counts()
+
+for i in drivers.columns:
+  counts = drivers[i].value_counts()
+  print(counts)
+
+```
+
+library(tidyverse)
+cat_map <- purrr::map
+options(scipen = 999)
+theme_set(theme_light())
+
+constructor_results <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructor_results.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(constructor_race_points = points,
+         constructor_status = status)
+
+constructor_standings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructor_standings.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(constructor_season_points = points,
+         constructor_season_pos = position,
+         constructor_season_pos_text = position_text,
+         constructor_season_wins = wins)
+
+races <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/races.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(gp_name = name,
+         gp_date = date,
+         gp_url = url,
+         gp_start_time = time)
+
+constructors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/constructors.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(constructor_name = name,
+         constructor_nationality = nationality,
+         con_url = url)
+
+driver_standings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/driver_standings.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(drive_season_position = position,
+         drive_season_pos_text = position_text,
+         drive_season_points = points,
+         drive_season_wins = wins)
+# some issues
+
+drivers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/drivers.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(unique_driver_id = driver_ref,
+         perm_drive_number = number,
+         driver_initial_id = code,
+         driver_url = url)
+
+lap_times <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/lap_times.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(race_pos = position,
+         lap_time = time,
+         lap_time_ms = milliseconds,
+         lap_time_number = lap)
+
+pit_stops <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/pit_stops.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(stop_number = stop,
+         pit_lap_number = lap,
+         time_of_pit = time,
+         pit_duration = duration,
+         pit_dur_ms = milliseconds)
+
+qualifying <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/qualifying.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(driver_number = number,
+         quali_pos = position)
+
+seasons <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/seasons.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(season_url = url)
+
+results <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/results.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(driver_number = number,
+         final_driver_pos = position,
+         final_driver_pos_text= position_text,
+         race_result_points = points,
+         completed_laps = laps,
+         gp_finish_time = time,
+         gp_finish_time_ms = milliseconds,
+         fast_lap_rank = rank)
+# some issues
+
+status <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/status.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(driver_status = status)
+
+circuits <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/circuits.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(circuit_url = url,
+         long = lng)
+
+# joins
+df1 <- left_join(constructor_standings, constructor_results)
+df2 <- left_join(df1, races)
+df3 <- left_join(df2, constructors)
+df4 <- left_join(df3, driver_standings)
+df5 <- left_join(df4, drivers)
+df6 <- left_join(df5, lap_times)
+df7 <- left_join(df6, pit_stops)
+df8 <- left_join(df7, qualifying)
+df9 <- left_join(df8, seasons)
+df10 <- left_join(df9, results)
+df11 <- left_join(df10, status)
+
+rm(df1)
+rm(df2)
+rm(df3)
+rm(df4)
+rm(df5)
+rm(df6)
+rm(df7)
+rm(df8)
+rm(df9)
+rm(df10)
+rm(constructor_standings)
+rm(constructor_results)
+rm(races)
+rm(constructors)
+rm(driver_standings)
+rm(drivers)
+rm(lap_times)
+rm(pit_stops)
+rm(qualifying)
+rm(seasons)
+rm(results)
+rm(status)
+
+f1_data <- left_join(df11, circuits) %>% 
+  rowid_to_column()
+
+rm(df11)
+rm(circuits)
+
+# write.csv(f1_data, "f1_data.csv")
+
+set.seed(12282021)
+
+f1_data1 <- f1_data %>% 
+  sample_frac(.5)
+
+f1_data2 <- anti_join(f1_data, f1_data1, by = 'rowid')
+
+write.csv(f1_data1, "f1_data1.csv")
+write.csv(f1_data2, "f1_data2.csv")
+
+library(tidyverse)
+library(tidymodels)
+options(scipen = 999)
+theme_set(theme_light())
+
+
+hybrid <- read_csv("tidy_tuesday/hybrid.csv")
+
+hybrid <- hybrid %>% 
+  filter(year >= 2015) %>% 
+  mutate(perm_drive_number = recode(perm_drive_number, "\\N" = NA_character_),
+         q1 = recode(q1, "\\N" = NA_character_),
+         final_driver_pos = recode(final_driver_pos, "\\N" = NA_character_),
+         gp_finish_time = recode(gp_finish_time, "\\N" = NA_character_),
+         gp_finish_time_ms = recode(gp_finish_time_ms, "\\N" = NA_character_)) %>% 
+  mutate(race_id = as.factor(race_id),
+         constructor_id = as.factor(constructor_id),
+         constructor_season_pos = as.factor(constructor_season_pos),
+         constructor_season_wins = as.factor(constructor_season_wins),
+         round = as.factor(round),
+         circuit_id = as.factor(circuit_id),
+         constructor_nationality = as.factor(constructor_nationality),
+         constructor_ref = as.factor(constructor_ref),
+         driver_id = as.factor(driver_id),
+         drive_season_position = as.factor(drive_season_position),
+         drive_season_pos_text = as.character(drive_season_pos_text),
+         drive_season_wins = as.factor(drive_season_wins),
+         perm_drive_number = as.factor(perm_drive_number),
+         driver_initial_id = as.factor(driver_initial_id),
+         nationality = as.factor(nationality),
+         race_pos = as.factor(race_pos),
+         stop_number = as.factor(stop_number),
+         driver_number = as.factor(driver_number),
+         quali_pos = as.factor(quali_pos),
+         grid = as.factor(grid),
+         final_driver_pos = as.factor(final_driver_pos),
+         position_order = as.factor(position_order),
+         gp_finish_time_ms = as.numeric(gp_finish_time_ms),
+         fast_lap_rank = as.factor(fast_lap_rank),
+         circuit_ref = as.factor(circuit_ref),
+         location = as.factor(location),
+         country = as.factor(country),
+         champion = as.factor(champion),
+         constructor_champ = as.factor(constructor_champ),
+         location = recode(location,
+                           "S<e3>o Paulo" = "Sao Paulo",
+                           "Portim<e3>o" = "Portimao",
+                           "N<fc>rburg" = "Nurburg",
+                           "Montmel<f3>" = "Montmelo"))
+
+model_data <- hybrid %>% 
+  dplyr::select(-X1, -X1_1, -rowid,
+                -constructor_standings_id,
+                -constructor_id,
+                -constructor_season_pos_text,
+                -constructor_results_id,
+                -constructor_status,
+                -gp_name,
+                -gp_date,
+                -gp_start_time,
+                -gp_url,
+                -constructor_name,
+                -con_url,
+                -driver_standings_id,
+                -drive_season_pos_text,
+                -driver_id,
+                -perm_drive_number,
+                -forename,
+                -surname,
+                -dob,
+                -driver_url,
+                -lap_time,
+                -time_of_pit,
+                -pit_duration,
+                -qualify_id,
+                -driver_number,
+                -season_url,
+                -q1,
+                -q2,
+                -q3,
+                -result_id,
+                -final_driver_pos_text,
+                -gp_finish_time,
+                -fastest_lap_time,
+                -driver_status,
+                -name,
+                -circuit_url,
+                -engine_disp,
+                -unique_driver_id,
+                -champion) %>% 
+  mutate(driver_initial_id = fct_relevel(driver_initial_id, "HAM")) %>% 
+  filter(driver_initial_id != "DIR" &
+           driver_initial_id != "MER" &
+           driver_initial_id != "RSS" &
+           driver_initial_id != "STE")
+
+# glimpse(hybrid)
+# glimpse(model_data)
+
+# look into getting counts of getting into q1, q2, and q3 - NOTE
+
+set.seed(123021)
+
+# model_data_sub <- model_data %>%
+#   sample_frac(.5)
+
+set.seed(123021)
+
+hybrid_split <- initial_split(model_data, strata = drive_season_points)
+# hybrid_split <- initial_split(model_data_sub, strata = champion)
+
+hybrid_train <- training(hybrid_split)
+hybrid_test <- testing(hybrid_split)
+
+set.seed(123021)
+
+lm_model <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode("regression") #%>% 
+  # set_args(penalty = tune(),
+  #          mixture = tune())
+
+glimpse(hybrid_train)
+
+set.seed(123021)
+
+lm_fit <- lm_model %>% 
+  fit(drive_season_points ~ lat*long*alt +
+        driver_initial_id +
+        drive_season_wins +
+        lap_time_number +
+        race_pos +
+        round +
+        year +
+        quali_pos + 
+        lap_time_ms +
+        stop_number +
+        pit_lap_number +
+        pit_dur_ms +
+        completed_laps +
+        gp_finish_time_ms +
+        circuit_ref,
+      data = hybrid_train)
+
+# lm_fit %>%
+#   tidy() %>% 
+#   View()
+
+lm_pred <- predict(lm_fit, hybrid_train) %>% 
+  bind_cols(hybrid_train %>% 
+              select(drive_season_points))
+
+lm_pred %>% 
+  metrics(truth = drive_season_points, estimate = .pred)
+
+
+set.seed(123021)
+
+lm_recipe <- recipe(drive_season_points ~ lat + long + alt +
+                      driver_initial_id +
+                      drive_season_wins +
+                      lap_time_number +
+                      race_pos +
+                      round +
+                      year +
+                      quali_pos + 
+                      lap_time_ms +
+                      stop_number +
+                      pit_lap_number +
+                      pit_dur_ms +
+                      completed_laps +
+                      gp_finish_time_ms +
+                      circuit_ref,
+                    data = hybrid_train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_interact(terms =~ lat:long:alt) %>% 
+  step_zv(all_predictors()) %>%
+  step_nzv(all_predictors())
+
+f1_fold <- vfold_cv(hybrid_train, v = 5)
+
+set.seed(123021)
+
+lm_flow <- workflow() %>%
+  add_recipe(lm_recipe) %>%
+  add_model(lm_model)
+
+lm_fit <- tune_grid(lm_flow,
+                    resamples = f1_fold,
+                    control = control_resamples(verbose = TRUE,
+                                                save_pred = TRUE))
+
+lm_fit$.notes %>%
+  pluck(1) %>%
+  View()
+
+# lm_fit %>%
+#   show_fit()
+
+lm_fit %>%
+  collect_metrics()
+
+# lm_fit %>%
+#   select_best(metric = "rmse")
+
+
+
+library(ranger)
+
+get_model <- function(x) {
+  pull_workflow_fit(x) %>% tidy()
+}
+
+set.seed(123021)
+
+# model_recipe <- recipe(champion ~ .,
+#                        data = hybrid_train) %>% 
+#   update_role(constructor_results_id, qualify_id,
+#               constructor_standings_id, driver_standings_id,
+#               result_id, status_id,
+#               new_role = "id") %>% 
+#   update_role(q1, q2, q3,
+#               new_role = "min_sec_ms") %>%
+#   step_dummy(all_nominal_predictors(), -has_role("id")) %>% 
+#   step_zv(all_predictors()) %>% 
+#   step_nzv(all_predictors())
+
+set.seed(123021)
+
+# cores <- parallel::detectCores()
+
+# model <- rand_forest() %>% 
+#   set_engine("ranger",
+#              num.threads = cores,
+#              importance = "permutation",
+#              verbose = TRUE) %>% 
+#   set_mode("classification") %>% 
+#   set_args(trees = 1000)
+
+# random_gump <- rand_forest() %>% 
+#   set_engine("ranger",
+#              num.threads = cores,
+#              importance = "permutation",
+#              verbose = TRUE) %>% 
+#   set_mode("regression") %>% 
+#   set_args(mtry = tune(),
+#            trees = 1000,
+#            min_n = tune())
+
+set.seed(123021)
+
+# f1_fold <- vfold_cv(hybrid_train, v = 5)
+
+set.seed(123021)
+
+# f1_flow <- workflow() %>% 
+  # add_recipe(model_recipe) %>% 
+  # add_model(model)
+
+set.seed(123021)
+
+one_model_fit <- model %>% 
+  fit(champion ~ .,
+      data = hybrid_train)
+
+# re_fit <- tune_grid(f1_flow,
+#                     resamples = f1_fold,
+#                     control = control_resamples(verbose = TRUE,
+#                                                 save_pred = TRUE,
+#                                                 extract = get_model))
+
+# one_model_pred <- 
+  predict(one_model_fit, hybrid_train) %>% 
+  bind_cols(predict(one_model_fit, hybrid_train, type = "prob"))
+
+
+
+
+# re_fit$.notes %>% 
+#   pluck(1)
+
+# re_fit %>% 
+#   show_fit()
+
+# re_fit %>% 
+#   collect_metrics()
+
+# re_fit %>% 
+#   select_best()
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include = FALSE}
+library(tidyverse)
+cat_map <- purrr::map
+library(maps)
+library(maptools)
+library(ggmap)
+library(tidymodels)
+
+options(scipen = 999)
+theme_set(theme_light())
+```
+
+```{r include data, echo = FALSE, eval = TRUE}
+d1 <- read_csv("tidy_tuesday/f1_data1.csv")
+d2 <- read_csv("tidy_tuesday/f1_data2.csv")
+
+d2 <- d2 %>% 
+  mutate(constructor_season_pos_text = as.character(constructor_season_pos_text),
+         gp_start_time = as.character(gp_start_time),
+         q1 = as.character(q1),
+         q2 = as.character(q2),
+         final_driver_pos = as.character(final_driver_pos),
+         final_driver_pos_text = as.character(final_driver_pos_text),
+         fastest_lap = as.character(fastest_lap),
+         fast_lap_rank = as.character(fast_lap_rank),
+         fastest_lap_time = as.character(fastest_lap_time),
+         fastest_lap_speed = as.character(fastest_lap_speed))
+
+# glimpse(d1)
+# glimpse(d2)
+
+data <- bind_rows(d1, d2)
+
+f1 <- data %>% 
+  mutate(engine_disp = case_when(year >= 2000 & year <= 2005 ~ "V10",
+                                 year >= 2006 & year <= 2008 ~ "V8",
+                                 year >= 2009 & year <= 2013 ~ "V8 KERS",
+                                 year >= 2014 ~ "V6"),
+         engine_disp = as.factor(engine_disp)) %>% 
+  filter(year >= 2000) %>% 
+  rename(num_fastest_lap = fastest_lap) %>% 
+  mutate(champion = case_when(year == 2021 ~ "VER",
+                              year == 2020 ~ "HAM",
+                              year == 2019 ~ "HAM",
+                              year == 2018 ~ "HAM",
+                              year == 2017 ~ "HAM",
+                              year == 2016 ~ "ROS",
+                              year == 2015 ~ "HAM",
+                              year == 2014 ~ "HAM",
+                              year == 2013 ~ "VET",
+                              year == 2012 ~ "VET",
+                              year == 2011 ~ "VET",
+                              year == 2010 ~ "VET",
+                              year == 2009 ~ "BUT",
+                              year == 2008 ~ "HAM",
+                              year == 2007 ~ "RAI",
+                              year == 2006 ~ "ALO",
+                              year == 2005 ~ "ALO",
+                              year == 2004 ~ "MSC",
+                              year == 2003 ~ "MSC",
+                              year == 2002 ~ "MSC",
+                              year == 2001 ~ "MSC",
+                              year == 2000 ~ "MSC"),
+         constructor_champ = case_when(year == 2021 ~ "Red Bull",
+                              year == 2020 ~ "Mercedes",
+                              year == 2019 ~ "Mercedes",
+                              year == 2018 ~ "Mercedes",
+                              year == 2017 ~ "Mercedes",
+                              year == 2016 ~ "Mercedes",
+                              year == 2015 ~ "Mercedes",
+                              year == 2014 ~ "Mercedes",
+                              year == 2013 ~ "Red Bull",
+                              year == 2012 ~ "Red Bull",
+                              year == 2011 ~ "Red Bull",
+                              year == 2010 ~ "Red Bull",
+                              year == 2009 ~ "Brawn",
+                              year == 2008 ~ "McLaren",
+                              year == 2007 ~ "Ferrari",
+                              year == 2006 ~ "Renault",
+                              year == 2005 ~ "Renault",
+                              year == 2004 ~ "Ferrari",
+                              year == 2003 ~ "Ferrari",
+                              year == 2002 ~ "Ferrari",
+                              year == 2001 ~ "Ferrari",
+                              year == 2000 ~ "Ferrari"))
+
+glimpse(f1)
+map_chr(f1, class)
+```
+
+```{r ggplot, echo = FALSE, eval = TRUE}
+f1 %>% 
+  mutate(gp_name_sub = str_replace_all(gp_name, "Grand Prix", ""),
+         engine_disp = recode(engine_disp, "V10" = "V10",
+                              "V8 KERS" = "V8",
+                              "V8" = "V8",
+                              "V6" = "V6"),
+         engine_disp = fct_relevel(engine_disp, "V6", after = Inf)) %>% 
+  distinct(year, constructor_season_points, gp_name_sub, engine_disp, constructor_name, round) %>% 
+  group_by(year, gp_name_sub, engine_disp, constructor_name, round) %>% 
+  summarize(points = sum(constructor_season_points)) %>% 
+  ungroup() %>% 
+  mutate(cut_points = cut(points, breaks = 5)) %>% 
+  # count(cut_points)
+  filter(cut_points != "(-0.765,153]") %>% 
+  drop_na(gp_name_sub, points, round) %>% 
+  ggplot(aes(fct_reorder(gp_name_sub, round), points)) + 
+  geom_point(aes(color = as.factor(constructor_name)), size = 3) + 
+  facet_wrap(~engine_disp, scale = "free") +
+  coord_flip() + 
+  theme(legend.title = element_blank()) + 
+  labs(x = "",
+       y = "Total Constructor(Team) Points",
+       title = "Total Number of Points For Each Constructor",
+       caption = "Note: V10 Era = 2000-2005
+       V8 = 2006-2008
+       V8 + KERS (Kinetic Energy Recovery System) Era = 2009-2013
+       V6 (Hybrid Turbo) Era = 2014-2021")
+
+f1 %>% 
+  mutate(gp_name_sub = str_replace_all(gp_name, "Grand Prix", ""),
+         engine_disp = recode(engine_disp, "V10" = "V10",
+                              "V8 KERS" = "V8",
+                              "V8" = "V8",
+                              "V6" = "V6"),
+         engine_disp = fct_relevel(engine_disp, "V6", after = Inf)) %>% 
+  distinct(year, constructor_season_points, gp_name_sub, engine_disp, constructor_name, round) %>% 
+  group_by(year, gp_name_sub, engine_disp, constructor_name, round) %>% 
+  summarize(points = sum(constructor_season_points)) %>% 
+  ungroup() %>% 
+  mutate(cut_points = cut(points, breaks = 5)) %>% 
+  # count(cut_points)
+  # filter(cut_points != "(-0.765,153]") %>% 
+  filter((year < 2010 & points > 50) |
+         (year >= 2010 & points > 200)) %>% 
+  drop_na(gp_name_sub, points, round) %>% 
+  ggplot(aes(fct_reorder(gp_name_sub, round), points)) + 
+  geom_point(aes(color = as.factor(constructor_name)), size = 3) + 
+  facet_wrap(~year, scale = "free") +
+  coord_flip() + 
+  theme(legend.title = element_blank()) + 
+  labs(x = "",
+       y = "Total Constructor(Team) Points",
+       title = "Total Number of Points For Each Constructor",
+       caption = "Note: V10 Era = 2000-2005
+       V8 = 2006-2008
+       V8 + KERS (Kinetic Energy Recovery System) Era = 2009-2013
+       V6 (Hybrid Turbo) Era = 2014-2021")
+
+f1 %>% 
+  mutate(gp_name_sub = str_replace_all(gp_name, "Grand Prix", ""),
+         engine_disp = recode(engine_disp, "V10" = "V10",
+                              "V8 KERS" = "V8",
+                              "V8" = "V8",
+                              "V6" = "V6"),
+         engine_disp = fct_relevel(engine_disp, "V6", after = Inf)) %>% 
+  distinct(year, drive_season_points, gp_name_sub, engine_disp, driver_initial_id, round) %>% 
+  group_by(year, gp_name_sub, engine_disp, driver_initial_id, round) %>% 
+  summarize(points = sum(drive_season_points)) %>% 
+  ungroup() %>% 
+  mutate(cut_points = cut(points, breaks = 5)) %>% 
+  # count(cut_points)
+  filter(cut_points == "(330,413]" |
+           cut_points == "(248,330]") %>% 
+  drop_na(gp_name_sub, points, round) %>% 
+  ggplot(aes(fct_reorder(gp_name_sub, round), points)) + 
+  geom_point(aes(color = as.factor(driver_initial_id)), size = 3) + 
+  facet_wrap(~engine_disp, scale = "free") +
+  coord_flip() + 
+  theme(legend.title = element_blank()) + 
+  labs(x = "",
+       y = "Total Constructor(Team) Points",
+       title = "Total Number of Points For Each Constructor",
+       caption = "Note: V10 Era = 2000-2005
+       V8 = 2006-2008
+       V8 + KERS (Kinetic Energy Recovery System) Era = 2009-2013
+       V6 (Hybrid Turbo) Era = 2014-2021")
+
+f1 %>% 
+  mutate(gp_name_sub = str_replace_all(gp_name, "Grand Prix", ""),
+         engine_disp = recode(engine_disp, "V10" = "V10",
+                              "V8 KERS" = "V8",
+                              "V8" = "V8",
+                              "V6" = "V6"),
+         engine_disp = fct_relevel(engine_disp, "V6", after = Inf)) %>% 
+  distinct(year, drive_season_points, gp_name_sub, engine_disp, driver_initial_id, round) %>% 
+  group_by(year, gp_name_sub, engine_disp, driver_initial_id, round) %>% 
+  summarize(points = sum(drive_season_points)) %>% 
+  ungroup() %>% 
+  mutate(cut_points = cut(points, breaks = 5)) %>% 
+  # count(cut_points)
+  filter(cut_points == "(330,413]" |
+           cut_points == "(248,330]") %>% 
+  drop_na(gp_name_sub, points, round) %>% 
+  ggplot(aes(fct_reorder(gp_name_sub, round), points)) + 
+  geom_point(aes(color = as.factor(driver_initial_id)), size = 3) + 
+  facet_wrap(~year, scale = "free") +
+  coord_flip() + 
+  theme(legend.title = element_blank()) + 
+  labs(x = "",
+       y = "Total Driver Points",
+       title = "Total Number of Points For Each Constructor",
+       caption = "Note: V10 Era = 2000-2005
+       V8 = 2006-2008; 2009-2013
+       V6 (Hybrid Turbo) Era = 2014-2021")
+
+```
+
+```{r}
+world <- map_data("world")
+```
+
+```{r}
+number1 <- f1 %>% 
+  distinct(year, constructor_name, constructor_season_pos_text, long, lat) %>% 
+  group_by(year, constructor_name) %>% 
+  filter(constructor_season_pos_text == "1")
+
+ggplot() +
+  geom_polygon(data = world,
+               aes(long, lat, group = group),
+               fill = "gray70",
+               alpha = .5) + 
+  geom_point(data = number1,
+             aes(long, lat, color = constructor_name), size = 3) +
+  facet_wrap(~year) + 
+  theme(legend.title = element_blank()) +
+  coord_fixed(1.3)
+
+library(gganimate)
+constructor_win_plot <- ggplot() +
+  geom_polygon(data = world,
+               aes(long, lat, group = group),
+               fill = "gray70",
+               alpha = .5) + 
+  geom_point(data = number1,
+             aes(long, lat, color = constructor_name), size = 3) +
+  transition_time(as.numeric(year)) +
+  theme(legend.title = element_blank()) +
+    labs(title = "Constructor Wins",
+         subtitle = "Year: {frame_time")
+
+animate(constructor_win_plot,
+        renderer = gifski_renderer())
+# anim_save("constructor_win_plot.gif")
+```
+
+```{r}
+number1_driver <- f1 %>% 
+  distinct(year, driver_initial_id, drive_season_pos_text, long, lat) %>% 
+  group_by(year, driver_initial_id) %>% 
+  filter(drive_season_pos_text == "1")
+
+ggplot() +
+  geom_polygon(data = world,
+               aes(long, lat, group = group),
+               fill = "gray70",
+               alpha = .5) + 
+  geom_point(data = number1_driver,
+             aes(long, lat, color = driver_initial_id), size = 3) +
+  facet_wrap(~year) + 
+  theme(legend.title = element_blank())
+
+ggplot() +
+  geom_polygon(data = world,
+               aes(long, lat, group = group),
+               fill = "gray70",
+               alpha = .5) + 
+  geom_point(data = number1_driver,
+             aes(long, lat, color = as.factor(year)), size = 3) +
+  facet_wrap(~fct_reorder(driver_initial_id, year)) + 
+  theme(legend.title = element_blank())
+```
+
+```{r descriptives}
+hybrid <- f1 %>% 
+  filter(engine_disp == "V6")
+
+# write.csv(hybrid, "hybrid.csv")
+
+
+
+# hybrid %>%
+#   select_if(is.numeric) %>%
+#   cat_map(~ggplot(data = hybrid, aes(.x)) +
+#             geom_histogram(bins = 15,
+#                            color = "white",
+#                            fill = "dodgerblue") +
+#             labs(x = glue::glue("{.x}")))
+
+# hybrid %>% 
+#   ggplot(aes(log(alt))) + 
+#   geom_histogram(bins = 15,
+#                            color = "white",
+#                            fill = "dodgerblue")
+
+glimpse(hybrid)
+
+hybrid %>% 
+  mutate() %>% 
+  dplyr::select(-x1,)
+```
+
+Notes for myself here.
+
+1. `alt` should probably be transformed
+2. interaction between `long` and `lat`
+3. create as factor for `status_id`, maybe even change the role to id
+4. potential interaction between completed laps and circuit
+5. `race_result_points` may want to be a transformed variable
+6. Update role for `position_order` since it appears to be for ordering purposes (ID)
+7. `grid` should be a factor
+8. `result_id` should be a factor; update role to id
+9. `quali_pos` should be factor
+10. `driver_number` should be id
+11. `qualify_id` may be id
+12. `pit_dur_ms` should be numeric, maybe look into cleaning because zero
+13. `pit_lap_number` should be factor
+14. `stop_number` should be a factor
+15. `lap_time_ms` should be numeric
+16. `race_pos` should be factor
+17. `drive_season_wins` should be factor
+18. `drive_season_position` should be factor
+19. `drive_season_points` numeric
+20. `driver_id` may be id
+21. `driver_standings_id` numeric
+22. `curcuit_id` should be id
+23. `round` should be either id or factor
+24. `year` could be numeric or factor
+25. 
+
+```{r}
+hybrid %>% 
+  dplyr::select(-X1)
+
+names(hybrid)
+glimpse(hybrid)
+
+inspectdf::inspect_na(hybrid) %>% 
+  inspectdf::show_plot()
+```
+
+```{r modeling}
+
+
+
+
+```

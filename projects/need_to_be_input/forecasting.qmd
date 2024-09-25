@@ -1,0 +1,425 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r packages, echo = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(tidymodels)
+library(prophet)
+library(lubridate)
+library(modeltime)
+library(timetk)
+```
+
+```{r load data, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+googlesheets4::gs4_deauth()
+
+theme_set(theme_light())
+
+jet <- 
+  googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1SpRXsC3kXDaQLUfC6cPIOvsqxDF6updhgHRJeT8PTog/edit#gid=0", sheet = 1) %>% 
+  janitor::clean_names() %>%
+  mutate(ds = as_date(date))
+```
+
+```{r clean data, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+jetblue <- jet %>% 
+  mutate(actual_day = wday(ds,
+                           label = TRUE),
+         clean = ts_clean_vec(close)) %>% 
+  separate(col = date,
+           into = c('year_num', 'month_num', 'day_num'),
+           sep = '-') %>% 
+  mutate(year_num = as.factor(year_num),
+         year_num = relevel(year_num, ref = '2002')) %>% 
+  separate(col = day_num,
+           into = c('day_num', 'drop'),
+           sep = ' ') %>%
+  mutate(day_num = as.numeric(day_num),
+         month_num = as.factor(month_num)) %>% 
+  select(-drop) %>% 
+  arrange(ds)
+```
+
+```{r variation over time, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+jetblue %>% 
+  group_by(year_num, month_num) %>% 
+  summarize(var_value = sd(close)^2) %>% 
+  ungroup() %>% 
+  ggplot(aes(month_num, var_value)) + 
+  geom_point() + 
+  facet_wrap(vars(year_num))
+```
+
+```{r histograms, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+only_numeric <- jetblue %>% 
+  select(close, clean)
+
+map2(only_numeric,
+     names(only_numeric),
+     ~ggplot(data = only_numeric,
+             aes(.x)) + 
+       geom_histogram(color = 'white',
+                      fill = 'dodgerblue') +
+       geom_vline(xintercept = mean(.x) +
+                    sd(.x) +
+                    sd(.x) +
+                    sd(.x),
+                  color = 'red',
+                  size = 1.25,
+                  linetype = 2) + 
+       geom_vline(xintercept = mean(.x) -
+                    sd(.x) -
+                    sd(.x) -
+                    sd(.x),
+                  color = 'red',
+                  size = 1.25,
+                  linetype = 2) + 
+       labs(title = .y))
+```
+
+```{r plot time series, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+map2(only_numeric,
+     names(only_numeric),
+     ~only_numeric %>% 
+       plot_time_series(jetblue$ds,
+                        .x,
+                        .interactive = FALSE) + 
+       labs(title = .y))
+```
+
+```{r anomaly detection, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+jetblue %>% 
+  plot_anomaly_diagnostics(ds,
+                           clean,
+                           .facet_ncol = 1,
+                           .interactive = FALSE)
+
+jetblue %>% 
+  tk_anomaly_diagnostics(ds,
+                         clean) %>% 
+  ggplot(aes(ds, observed)) + 
+  geom_line() + 
+  geom_point(aes(color = anomaly)) +
+  viridis::scale_color_viridis(option = 'D',
+                               discrete = TRUE,
+                               begin = .5,
+                               end = 0)
+
+anomaly <- jetblue %>%
+  tk_anomaly_diagnostics(ds,
+                         clean)
+
+jetblue <- left_join(jetblue, anomaly) %>%
+  filter(anomaly != 'Yes')
+```
+
+```{r seasonality, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+jetblue %>% 
+  plot_seasonal_diagnostics(ds,
+                            clean,
+                            .interactive = FALSE)
+```
+
+```{r cores, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+set.seed(05262022)
+
+parallel::detectCores()
+parallel_start(10,
+               .method = 'parallel')
+```
+
+```{r splits, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+set.seed(05262022)
+jet_split <- initial_time_split(jetblue)
+```
+
+```{r prophet model, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+prophet_mod <- function(splits,
+                        changepoints = .05,
+                        seasonality = .01,
+                        holiday = .01,
+                        season_type = 'additive',
+                        day_season = 'auto',
+                        week_season = 'auto',
+                        year_season = 'auto',
+                        train = TRUE){
+  library(tidyverse)
+  library(tidymodels)
+  library(modeltime)
+  library(prophet)
+  
+  analy_data <- analysis(splits)
+  assess_data <- assessment(splits)
+  
+  model <- prophet_reg() %>% 
+    set_engine(engine = 'prophet',
+               verbose = TRUE) %>% 
+    set_args(prior_scale_changepoints = changepoints,
+             prior_scale_seasonality = seasonality,
+             prior_scale_holidays = holiday,
+             season = season_type,
+             seasonality_daily = day_season,
+             seasonality_weekly = week_season,
+             seasonality_yearly = year_season) %>% 
+    fit(clean ~ ds + year_num, 
+        data = analy_data)
+  
+  if(train == TRUE){
+    train_cali <- model %>% 
+      modeltime_calibrate(new_data = analy_data)
+    
+    train_acc <- train_cali %>% 
+      modeltime_accuracy()
+    
+    return(list(train_cali, train_acc))
+  }
+  
+  else{
+    test_cali <- model %>% 
+      modeltime_calibrate(new_data = assess_data)
+    
+    test_acc <- test_cali %>% 
+      modeltime_accuracy()
+    
+    return(list(test_cali, test_acc))
+  }
+}
+```
+
+```{r baseline, echo = TRUE, eval = TRUE, message = TRUE, warning = FALSE}
+set.seed(05262022)
+baseline <- prophet_mod(jet_split,
+                 train = TRUE) %>% 
+  pluck(2)
+
+baseline
+```
+
+```{r baseline visual, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+prophet_mod(jet_split,
+                 train = TRUE) %>%  
+  pluck(1) %>% 
+  modeltime_forecast(new_data = training(jet_split),
+                     actual_data = jetblue) %>% 
+  plot_modeltime_forecast(.interactive = FALSE) +
+  labs(title = 'Prophet Baseline Model')
+```
+
+```{r tuning model, echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE}
+set.seed(05262022)
+
+proph_model <- prophet_reg() %>%
+  set_engine(engine = 'prophet',
+             verbose = TRUE) %>%
+  set_args(prior_scale_changepoints = tune(),
+           prior_scale_seasonality = tune(),
+           prior_scale_holidays = tune(),
+           season = 'additive',
+           seasonality_daily = 'auto',
+           seasonality_weekly = 'auto',
+           seasonality_yearly = 'auto')
+
+proph_rec <-
+  recipe(clean ~ ds + year_num,
+         data = training(jet_split))
+
+
+set.seed(05262022)
+train_fold <-
+  rolling_origin(training(jet_split),
+                 initial = 270,  
+                 assess = 90, 
+                 skip = 30,
+                 cumulative = TRUE)
+
+set.seed(05262022)
+grid_values <-
+  grid_latin_hypercube(prior_scale_changepoints(),
+                       prior_scale_seasonality(),
+                       prior_scale_holidays(),
+                       size = 5)
+
+set.seed(05262022)
+proph_fit <- tune_grid(object = proph_model,
+                       preprocessor = proph_rec,
+                       resamples = train_fold,
+                       grid = grid_values,
+                       control = control_grid(verbose = TRUE,
+                                              save_pred = TRUE,
+                                              allow_par = TRUE))
+
+
+tuned_metrics <- collect_metrics(proph_fit)
+tuned_metrics %>%
+  filter(.metric == 'rmse') %>% 
+  arrange(mean)
+
+# saveRDS(tuned_metrics,
+#         file = 'tuned_metrics.rds')
+```
+
+```{r rds, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+metrics <-
+  readr::read_rds(here::here('posts/2022-06-02-prophet-model/tuned_metrics.rds'))
+
+metrics %>% 
+  filter(.metric == 'rmse') %>% 
+  arrange(mean)
+```
+
+```{r final train, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+final_train <- prophet_mod(jet_split,
+                 changepoints = 3.53,
+                 seasonality = .017,
+                 holiday = 1.12,
+                 train = TRUE) %>%  
+  pluck(2)
+
+final_train
+
+prophet_mod(jet_split,
+            changepoints = 3.53,
+            seasonality = .017,
+            holiday = 1.12,
+            train = TRUE) %>%  
+  pluck(1) %>% 
+  modeltime_forecast(new_data = training(jet_split),
+                     actual_data = jetblue) %>% 
+  plot_modeltime_forecast(.interactive = FALSE) +
+  labs(title = 'JetBlue Stock Prices - Training Model')
+```
+
+```{r testing, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+prophet_mod(jet_split,
+            changepoints = 3.53,
+            seasonality = .017,
+            holiday = 1.12,
+            train = FALSE) %>%
+  pluck(1) %>% 
+  modeltime_forecast(new_data = testing(jet_split),
+                     actual_data = jetblue) %>% 
+  plot_modeltime_forecast(.interactive = FALSE) +
+  labs(title = 'JetBlue Stock Prices - Testing Model')
+
+test_model <- prophet_mod(jet_split,
+            changepoints = 3.53,
+            seasonality = .017,
+            holiday = 1.12,
+            train = FALSE) %>%
+  pluck(2)
+
+test_model
+```
+
+```{r forecasting, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+
+future <- jetblue %>% 
+  future_frame(.length_out = '1 year', .bind_data = TRUE)
+
+future <-
+  future %>%
+  select(-year_num, -month_num, -day_num) %>%
+  mutate(date2 = ds) %>%
+  separate(col = date2,
+           into = c('year_num', 'month_num', 'day_num'),
+           sep = '-') %>%
+  mutate(year_num = as.factor(year_num),
+         year_num = relevel(year_num, ref = '2002'),
+         month_num = as.factor(month_num),
+         day_num = as.numeric(day_num)) %>% 
+  arrange(ds)
+
+glimpse(future)
+
+test_model1 <- prophet_mod(jet_split,
+            changepoints = 3.53,
+            seasonality = .017,
+            holiday = 1.12,
+            train = FALSE) %>%
+  pluck(1)
+
+test_model1 %>% 
+  modeltime_refit(data = future) %>% 
+  modeltime_forecast(new_data = future,
+                     actual_data = jetblue) %>% 
+  plot_modeltime_forecast(.interactive = FALSE) +
+  labs(title = 'Forecasted JetBlue Stock Prices')
+```
+
+```{r american airlines, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+
+link <- 'https://docs.google.com/spreadsheets/d/11DWSWLFXT84uGg_mBvVYJevQOsN7ghYovJefH87BJXc/edit#gid=0'
+
+amer <- 
+  googlesheets4::read_sheet(link, , sheet = 1, range = "A1:B1000") %>% 
+  janitor::clean_names() %>% 
+  mutate(ds = as_date(date))
+
+american <-
+  amer %>% 
+  mutate(actual_day = wday(ds,
+                           label = TRUE),
+         clean = ts_clean_vec(close)) %>% 
+  separate(col = date,
+           into = c('year_num', 'month_num', 'day_num'),
+           sep = '-') %>% 
+  mutate(year_num = as.factor(year_num),
+         year_num = relevel(year_num, ref = '2013')) %>% 
+  separate(col = day_num,
+           into = c('day_num', 'drop'),
+           sep = ' ') %>%
+  mutate(day_num = as.numeric(day_num),
+         month_num = as.factor(month_num)) %>% 
+  select(-drop) %>% 
+  arrange(ds)
+
+
+model <- prophet_reg() %>% 
+    set_engine(engine = 'prophet',
+               verbose = TRUE) %>% 
+    set_args(prior_scale_changepoints = 3.53,
+             prior_scale_seasonality = .017,
+             prior_scale_holidays = 1.12,
+             season = 'additive',
+             seasonality_daily = 'auto',
+             seasonality_weekly = 'auto',
+             seasonality_yearly = 'auto') %>% 
+    fit(clean ~ ds + year_num, 
+        data = american)
+
+model_cali <- model %>% 
+  modeltime_calibrate(new_data = american)
+    
+model_cali %>% 
+  modeltime_accuracy()
+
+future_amer <- american %>% 
+  future_frame(.length_out = '1 year', .bind_data = TRUE)
+
+future_amer <-
+  future_amer %>%
+  select(-year_num, -month_num, -day_num) %>%
+  mutate(date2 = ds) %>%
+  separate(col = date2,
+           into = c('year_num', 'month_num', 'day_num'),
+           sep = '-') %>%
+  mutate(year_num = as.factor(year_num),
+         year_num = relevel(year_num, ref = '2013'),
+         month_num = as.factor(month_num),
+         day_num = as.numeric(day_num))
+
+model_cali %>% 
+  modeltime_forecast(new_data = american,
+                     actual_data = american) %>% 
+  plot_modeltime_forecast(.interactive = FALSE)  + 
+  labs(title = 'Predicted American Airlines Stock Prices')
+
+model_cali %>% 
+  modeltime_refit(data = future_amer) %>%
+  modeltime_forecast(new_data = future_amer,
+                     actual_data = american) %>% 
+  plot_modeltime_forecast(.interactive = FALSE) + 
+  labs(title = 'Forecasted American Airlines Stock Prices')
+```

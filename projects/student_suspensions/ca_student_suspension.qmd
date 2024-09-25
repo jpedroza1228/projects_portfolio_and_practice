@@ -1,0 +1,656 @@
+---
+title: "Students with Disabilities and Suspension in California Districts"
+format: html
+---
+
+## Data
+
+Data gathered from The California Department of Education's [Suspension Data Downloadable Data Files](https://www.cde.ca.gov/ds/ad/filessd.asp)
+
+Data gathered from The California Department of Education's [Special Education Downloadable Data Files](https://www.cde.ca.gov/ds/ad/filesspedps.asp)
+
+Data was then loaded from the `txt` files and saved as csv files in case files were changed from the California Department of Education. You can find the data files as `csv` files [here]().
+
+```{r}
+#| echo: false
+#| include: false
+#| eval: true
+
+library(tidyverse)
+library(reactable)
+library(cmdstanr)
+library(brms)
+library(broom)
+library(broom.mixed)
+library(tidybayes)
+
+theme_set(theme_light())
+
+two_three <- read_csv(here::here("projects/student_suspensions/data", "special_education_2022_2023.csv"))
+suspend23 <- read_csv(here::here("projects/student_suspensions/data", "suspension_2022_2023.csv"))
+
+suspend23 <- suspend23 |>
+  filter(
+    aggregate_level == "D" &
+    reporting_category != "TA" &
+    charter_yn == "No"
+  )
+
+sub23 <- two_three |>
+  filter(
+    reporting_category != "TA" &
+    aggregate_level == "D" &
+    charter_school == "N"
+  )
+
+suspend23 <- suspend23 |> filter(reporting_category == "SD")
+
+data <- inner_join(
+  sub23,
+  suspend23,
+  by = c(
+    "academic_year",
+    "aggregate_level",
+    "county_code",
+    "district_code",
+    "county_name",
+    "district_name"
+    )
+  )
+
+data <- data |> 
+  select(
+    -c(
+      school_name.x,
+      school_code.x,
+      reporting_category.y,
+      school_code.y,
+      school_name.y
+    )
+  ) |>
+  rename(reporting_category = reporting_category.x)
+
+data <- data |>
+  mutate(
+    across(
+      c(
+        sped_enr_n:ps_muk_percent,
+        cumulative_enrollment:suspension_count_other_reasons
+      ),
+      ~case_when(
+        .x == "*" ~ NA_character_,
+        TRUE ~ .x
+      )
+    )
+  )
+
+data <- data |>
+  select(
+    academic_year:district_name,
+    reporting_category:ps_muk_percent,
+    cumulative_enrollment:suspension_count_other_reasons
+  )
+
+data <- data |>
+  mutate(
+    across(
+      c(
+        sped_enr_n:suspension_count_other_reasons
+      ),
+      ~as.numeric(.x)
+    )
+  )
+
+data <- data |> drop_na()
+
+data <- data |> 
+  filter(
+    str_detect(
+      reporting_category,
+      "DC"
+    )
+  )
+```
+
+## Variables of interest in data
+
+- reporting category
+  
+    - DC_AUT = Autism (AUT)
+    - DC_DB = Deaf Blindedness (DB)
+    - DC_DFHI = Deaf (DF)/Hearing Impairment (HI)
+    - DC_ED = Emotional Disturbance (ED)
+    - DC_EMD = Established Medical Disability (EMD)
+    - DC_HH = Hard of Hearing (HH)
+    - DC_ID = Intellectual Disability (ID)
+    - DC_MD = Multiple Disabilities (MD)
+    - DC_OHI = Other Health Impairment (OHI)
+    - DC_OI = Orthopedic Health Impairment (OI)
+    - DC_SLD = Specific Learning Disability (SLD)
+    - DC_SLI = Speech or Language Impairment (SLI)
+    - DC_TBI = Traumatic Brain Injury (TBI)
+    - DC_VI = Visual Impairment (VI)
+
+- ps_rcgt80_percent
+
+    - A program setting where a student with disabilities participates in regular general education classroom setting, which includes at least 50 percent nondisabled students, at least 80 percent of the school day. On the report, data in these columns represent the number/percentage of the Special Education Enrollment for students whose Special Education Program Setting is Regular Classroom/Public Day School or Regular Independent Study or Virtual Charter and whose General Education Classroom Setting is Regular Class 80 Percent or More of the Day.
+
+```{r}
+#| echo: true
+#| eval: true
+
+data |> 
+  count(
+    reporting_category
+    ) |>
+  ggplot(
+    aes(
+      fct_reorder(
+        as.factor(reporting_category),
+        n
+      ),
+      n
+    )
+  ) +
+  geom_col(
+    position = "dodge"
+  ) +
+  coord_flip()
+
+data |>
+  count(
+    reporting_category
+  ) |>
+  arrange(desc(n)) |>
+  reactable()
+
+data <- data |>
+  filter(
+    !reporting_category %in% c("DC_TBI", "DC_EMD")
+  )
+
+data |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent,
+      unduplicated_count_of_students_suspended_defiance_only
+    )
+  ) +
+  geom_point(alpha = .3) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+data |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent,
+      suspension_count_defiance_only
+    )
+  ) +
+  geom_point(alpha = .3) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme(
+    legend.position = "none"
+  )
+```
+
+## Checking Predictors
+
+```{r}
+#| echo: true
+#| eval: true
+
+data |>
+  inspectdf::inspect_cor(with = "suspension_count_defiance_only") |>
+  inspectdf::show_plot()
+
+cor.test(data$ps_rcgt80_n, data$sped_enr_n)
+
+```
+
+## Modeling
+
+```{r}
+#| eval: false
+#| echo: true
+
+fit <- brm(
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+fit2 <- brm(
+  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+# saveRDS(fit, here::here("projects/student_suspensions/data", "model_fit.RDS"))
+# saveRDS(fit, here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+```
+
+```{r}
+#| eval: true
+#| echo: false
+
+fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit.RDS"))
+fit2 <- read_rds(here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+
+```
+
+### Defiance Only Suspensions
+
+```{r}
+#| eval: true
+#| echo: false
+
+tidy(fit) |>
+  mutate(
+    across(
+      -c(
+        effect,
+        component,
+        group,
+        term
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+
+ranef(fit)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+```
+
+### Unduplicated Defiance Only Suspensions
+
+```{r}
+#| eval: true
+#| echo: false
+
+tidy(fit2) |>
+  mutate(
+    across(
+      -c(
+        effect,
+        component,
+        group,
+        term
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+
+ranef(fit2)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+```
+
+
+## All Code Below
+
+
+```{r}
+#| echo: true
+#| eval: true
+sessioninfo::session_info()
+```
+
+
+```{r}
+#| eval: false
+#| echo: true
+
+library(tidyverse)
+library(reactable)
+library(cmdstanr)
+library(brms)
+library(broom)
+library(broom.mixed)
+library(tidybayes)
+
+theme_set(theme_light())
+
+two_three <- read_csv(here::here("projects/student_suspensions/data", "special_education_2022_2023.csv"))
+suspend23 <- read_csv(here::here("projects/student_suspensions/data", "suspension_2022_2023.csv"))
+
+suspend23 <- suspend23 |>
+  filter(
+    aggregate_level == "D" &
+    reporting_category != "TA" &
+    charter_yn == "No"
+  )
+
+sub23 <- two_three |>
+  filter(
+    reporting_category != "TA" &
+    aggregate_level == "D" &
+    charter_school == "N"
+  )
+
+suspend23 <- suspend23 |> filter(reporting_category == "SD")
+
+data <- inner_join(
+  sub23,
+  suspend23,
+  by = c(
+    "academic_year",
+    "aggregate_level",
+    "county_code",
+    "district_code",
+    "county_name",
+    "district_name"
+    )
+  )
+
+data <- data |> 
+  select(
+    -c(
+      school_name.x,
+      school_code.x,
+      reporting_category.y,
+      school_code.y,
+      school_name.y
+    )
+  ) |>
+  rename(reporting_category = reporting_category.x)
+
+data <- data |>
+  mutate(
+    across(
+      c(
+        sped_enr_n:ps_muk_percent,
+        cumulative_enrollment:suspension_count_other_reasons
+      ),
+      ~case_when(
+        .x == "*" ~ NA_character_,
+        TRUE ~ .x
+      )
+    )
+  )
+
+data <- data |>
+  select(
+    academic_year:district_name,
+    reporting_category:ps_muk_percent,
+    cumulative_enrollment:suspension_count_other_reasons
+  )
+
+data <- data |>
+  mutate(
+    across(
+      c(
+        sped_enr_n:suspension_count_other_reasons
+      ),
+      ~as.numeric(.x)
+    )
+  )
+
+data <- data |> drop_na()
+
+data <- data |> 
+  filter(
+    str_detect(
+      reporting_category,
+      "DC"
+    )
+  )
+
+data |> 
+  count(
+    reporting_category
+    ) |>
+  ggplot(
+    aes(
+      fct_reorder(
+        as.factor(reporting_category),
+        n
+      ),
+      n
+    )
+  ) +
+  geom_col(
+    position = "dodge"
+  ) +
+  coord_flip()
+
+data |> 
+  count(
+    reporting_category
+    ) |>
+    arrange(
+      desc(n)
+    ) |>
+    reactable()
+
+data <- data |>
+  filter(
+    !reporting_category %in% c("DC_TBI", "DC_EMD")
+  )
+
+data |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent,
+      unduplicated_count_of_students_suspended_defiance_only
+    )
+  ) +
+  geom_point(alpha = .3) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+data |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent,
+      suspension_count_defiance_only
+    )
+  ) +
+  geom_point(alpha = .3) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+data |>
+  inspectdf::inspect_cor(with = "suspension_count_defiance_only") |>
+  inspectdf::show_plot()
+
+cor.test(data$ps_rcgt80_n, data$sped_enr_n)
+
+fit <- brm(
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+fit2 <- brm(
+  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+saveRDS(fit, here::here("projects/student_suspensions/data", "model_fit.RDS"))
+# saveRDS(fit, here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+
+fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit.RDS"))
+fit2 <- read_rds(here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+
+tidy(fit) |>
+  mutate(
+    across(
+      everything(),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+
+ranef(fit)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+
+tidy(fit2) |>
+  mutate(
+    across(
+      -c(
+        effect,
+        component,
+        group,
+        term
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+
+ranef(fit2)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+```
