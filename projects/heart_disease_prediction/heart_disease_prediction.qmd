@@ -1,0 +1,625 @@
+---
+title: "Heart Disease Prediction"
+format: html
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+import pandas as pd
+import numpy as np
+from pyhere import here
+import plotnine as pn
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart = pd.read_excel(here('projects/heart_disease_prediction/data', 'heart.xlsx'))
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+#| 
+heart['thal'].value_counts()
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+
+heart['cp'].value_counts()
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['restecg'].value_counts()
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['ca'].value_counts()
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['slope'].value_counts()
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['cp0'] = np.select(
+  [
+    heart['cp'] == 0,
+    heart['cp'] == 1,
+    heart['cp'] == 2,
+    heart['cp'] == 3
+  ],
+  [ 
+    1, 0, 0, 0
+  ]
+)
+
+heart['cp1'] = np.select(
+  [
+    heart['cp'] == 0,
+    heart['cp'] == 1,
+    heart['cp'] == 2,
+    heart['cp'] == 3
+  ],
+  [ 
+    0, 1, 0, 0
+  ]
+)
+
+heart['cp2'] = np.select(
+  [
+    heart['cp'] == 0,
+    heart['cp'] == 1,
+    heart['cp'] == 2,
+    heart['cp'] == 3
+  ],
+  [ 
+    0, 0, 1, 0
+  ]
+)
+
+heart['cp3'] = np.select(
+  [
+    heart['cp'] == 0,
+    heart['cp'] == 1,
+    heart['cp'] == 2,
+    heart['cp'] == 3
+  ],
+  [ 
+    0, 0, 0, 1
+  ]
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['thal0'] = np.select(
+  [
+    heart['thal'] == 0,
+    heart['thal'] == 1,
+    heart['thal'] == 2,
+    heart['thal'] == 3
+  ],
+  [ 
+    1, 0, 0, 0
+  ]
+)
+
+heart['thal1'] = np.select(
+  [
+    heart['thal'] == 0,
+    heart['thal'] == 1,
+    heart['thal'] == 2,
+    heart['thal'] == 3
+  ],
+  [ 
+    0, 1, 0, 0
+  ]
+)
+
+heart['thal2'] = np.select(
+  [
+    heart['thal'] == 0,
+    heart['thal'] == 1,
+    heart['thal'] == 2,
+    heart['thal'] == 3
+  ],
+  [ 
+    0, 0, 1, 0
+  ]
+)
+
+heart['thal3'] = np.select(
+  [
+    heart['thal'] == 0,
+    heart['thal'] == 1,
+    heart['thal'] == 2,
+    heart['thal'] == 3
+  ],
+  [ 
+    0, 0, 0, 1
+  ]
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['restecg0'] = np.select(
+  [
+    heart['restecg'] == 0,
+    heart['restecg'] == 1,
+    heart['restecg'] == 2
+  ],
+  [ 
+    1, 0, 0
+  ]
+)
+
+heart['restecg1'] = np.select(
+  [
+    heart['restecg'] == 0,
+    heart['restecg'] == 1,
+    heart['restecg'] == 2
+  ],
+  [ 
+    0, 1, 0
+  ]
+)
+
+heart['restecg2'] = np.select(
+  [
+    heart['restecg'] == 0,
+    heart['restecg'] == 1,
+    heart['restecg'] == 2
+  ],
+  [ 
+    0, 0, 1
+  ]
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['ca0'] = np.select(
+  [
+    heart['ca'] == 0,
+    heart['ca'] == 1,
+    heart['ca'] == 2,
+    heart['ca'] == 3,
+    heart['ca'] == 4
+  ],
+  [ 
+    1, 0, 0, 0, 0
+  ]
+)
+
+heart['ca1'] = np.select(
+  [
+    heart['ca'] == 0,
+    heart['ca'] == 1,
+    heart['ca'] == 2,
+    heart['ca'] == 3,
+    heart['ca'] == 4
+  ],
+  [ 
+    0, 1, 0, 0, 0
+  ]
+)
+
+heart['ca2'] = np.select(
+  [
+    heart['ca'] == 0,
+    heart['ca'] == 1,
+    heart['ca'] == 2,
+    heart['ca'] == 3,
+    heart['ca'] == 4
+  ],
+  [ 
+    0, 0, 1, 0, 0
+  ]
+)
+
+heart['ca3'] = np.select(
+  [
+    heart['ca'] == 0,
+    heart['ca'] == 1,
+    heart['ca'] == 2,
+    heart['ca'] == 3,
+    heart['ca'] == 4
+  ],
+  [ 
+    0, 0, 0, 1, 0
+  ]
+)
+
+heart['ca4'] = np.select(
+  [
+    heart['ca'] == 0,
+    heart['ca'] == 1,
+    heart['ca'] == 2,
+    heart['ca'] == 3,
+    heart['ca'] == 4
+  ],
+  [ 
+    0, 0, 0, 0, 1
+  ]
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+heart['slope0'] = np.select(
+  [
+    heart['slope'] == 0,
+    heart['slope'] == 1,
+    heart['slope'] == 2
+  ],
+  [ 
+    1, 0, 0
+  ]
+)
+
+heart['slope1'] = np.select(
+  [
+    heart['slope'] == 0,
+    heart['slope'] == 1,
+    heart['slope'] == 2
+  ],
+  [ 
+    0, 1, 0
+  ]
+)
+
+heart['slope2'] = np.select(
+  [
+    heart['slope'] == 0,
+    heart['slope'] == 1,
+    heart['slope'] == 2
+  ],
+  [ 
+    0, 0, 1
+  ]
+)
+```
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+dummy_var = ['age', 'sex', 'trestbps', 'chol', 'fbs', 'thalach', 'exang', 'oldpeak', 'target', 'cp0', 'cp1',
+       'cp2', 'restecg0', 'restecg1', 'restecg2', 'thal0', 'thal1', 'thal2',
+       'thal3', 'cp3', 'ca0', 'ca1', 'ca2', 'ca3', 'ca4', 'slope1', 'slope2',
+       'slope0']
+
+heart_dummy = heart[dummy_var]
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+plot1 = (
+  pn.ggplot(heart_dummy, pn.aes('age', 'chol'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot1)
+
+plot2 = (
+  pn.ggplot(heart_dummy, pn.aes('age', 'trestbps'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot2)
+
+plot3 = (
+  pn.ggplot(heart_dummy, pn.aes('age', 'thalach'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot3)
+
+plot4 = (
+  pn.ggplot(heart_dummy, pn.aes('age', 'oldpeak'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot4)
+
+plot5 = (
+  pn.ggplot(heart_dummy, pn.aes('chol', 'trestbps'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot5)
+
+plot6 = (
+  pn.ggplot(heart_dummy, pn.aes('chol', 'thalach'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot6)
+
+plot7 = (
+  pn.ggplot(heart_dummy, pn.aes('chol', 'oldpeak'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot7)
+
+plot8 = (
+  pn.ggplot(heart_dummy, pn.aes('trestbps', 'thalach'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot8)
+
+plot9 = (
+  pn.ggplot(heart_dummy, pn.aes('trestbps', 'oldpeak'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+  
+print(plot9)
+
+plot10 = (
+  pn.ggplot(heart_dummy, pn.aes('thalach', 'oldpeak'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(pn.aes(color = 'factor(target)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+
+print(plot10)
+```
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+# 'cp0', 'restecg0', 'thal0', 'ca0', 'slope0'
+mod_feat = heart_dummy[['age', 'sex', 'trestbps', 'chol', 'fbs', 'thalach', 'exang', 'oldpeak', 'cp1',
+       'cp2', 'cp3', 'restecg1', 'restecg2', 'thal1', 'thal2',
+       'thal3',  'ca1', 'ca2', 'ca3', 'ca4', 'slope1', 'slope2']]
+
+target = heart_dummy['target']
+
+from sklearn.ensemble import GradientBoostingClassifier as grad_boost
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV
+from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.inspection import permutation_importance
+
+x_train, x_test, y_train, y_test = train_test_split(mod_feat, target, test_size = .20, stratify = target, random_state = 12345)
+```
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+
+model = grad_boost(loss = 'log_loss', random_state = 12345, verbose = 2, learning_rate = .01)
+folds = KFold(5)
+
+
+params = {'n_estimators': [100, 500, 1000],
+'min_samples_split': [2,5],
+'max_depth': [3, 5, 7]}
+```
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+grid = GridSearchCV(model, params, cv = folds, verbose = 1)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| include: false
+
+grid.fit(x_train, y_train)
+``` 
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+# print(grid.cv_results_)
+print(grid.best_score_)
+print(grid.best_params_)
+print(grid.best_estimator_)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+important_train = permutation_importance(grid.best_estimator_, x_train, y_train, n_repeats = 10, random_state = 12345, n_jobs = 2)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+important_train_series = pd.Series(important_train.importances_mean, index = mod_feat.columns)
+important_train_df = important_train_series.reset_index()
+important_train_df = important_train_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+(
+  pn.ggplot(important_train_df, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(position = 'dodge')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
+
+```{python}
+#| eval: false
+#| echo: false
+#| warning: false
+#| message: false
+
+#important = grid.best_estimator_.feature_importances_
+#important_series = pd.Series(important, index = mod_feat.columns)
+
+#important_df = important_series.reset_index()
+#important_df = important_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+```
+
+```{python}
+#| eval: false
+#| echo: false
+#| warning: false
+#| message: false
+
+# (
+#   pn.ggplot(important_df, pn.aes('factor(columns)', 'scores'))
+#   + pn.geom_col(position = 'dodge')
+#   + pn.coord_flip()
+#   + pn.theme_light()
+# )
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+model_predict = grid.predict(x_test)
+model_predict = pd.Series(model_predict)
+
+result_important = permutation_importance(grid.best_estimator_, x_test, y_test, n_repeats = 10, random_state = 12345, n_jobs = 2)
+```
+
+```{python}
+#| eval: true
+#| echo: true
+#| warning: false
+#| message: false
+
+print(accuracy_score(y_test, model_predict))
+print(roc_auc_score(y_test, model_predict))
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+test_important = pd.Series(result_important.importances_mean, index = mod_feat.columns)
+
+test_import_df = test_important.reset_index()
+test_import_df = test_import_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+```
+
+```{python}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+(
+  pn.ggplot(test_import_df, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(position = 'dodge')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
