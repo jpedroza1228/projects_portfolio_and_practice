@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Forecasting with Prophet Model"
 format: html
 ---
 
@@ -262,7 +262,7 @@ tuned_metrics %>%
 
 ```{r rds, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
 metrics <-
-  readr::read_rds(here::here('posts/2022-06-02-prophet-model/tuned_metrics.rds'))
+  readr::read_rds(here::here('projects/forecasting', 'tuned_metrics.rds'))
 
 metrics %>% 
   filter(.metric == 'rmse') %>% 
