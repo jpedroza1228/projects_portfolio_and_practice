@@ -1,0 +1,151 @@
+---
+title: "Untitled"
+format: html
+---
+
+library(tidyverse)
+library(tidymodels)
+library(forecast)
+library(prophet)
+library(lubridate)
+
+theme_set(theme_light())
+
+fred <- 
+  read_csv('fred_data/consumer_price_index_all_USA.csv') %>% 
+  janitor::clean_names() %>% 
+  rename(
+    consume_price = cpaltt01usm657n
+         ) %>% 
+  mutate(
+   date2 = date 
+  ) %>% 
+  separate(
+    date2,
+    into = c('month', 'day_useless', 'year'),
+    sep = '/'
+    ) %>% 
+  mutate(
+    month = as.factor(month),
+    year = as.factor(year)
+    )
+
+# fred$date <-
+# mdy(fred$date)
+
+glimpse(fred)
+# monthly data
+
+fred_ts <-
+  fred %>% 
+  ts()
+
+class(fred_ts)
+
+fred %>% 
+  ggplot(
+    aes(date, 
+        consume_price)
+    ) +
+  geom_line(
+    color = 'dodgerblue'
+    ) +
+  geom_hline(
+    yintercept = 0,
+    color = 'red',
+    linetype = 2
+    )
+  
+autoplot(fred_ts[, 'consume_price'])
+
+# lagged variables for coefficients where the effect lasts the variable
+# advertising for a campaign can last longer than the campaign
+
+mod_fit <-
+  tslm(consume_price ~ as.factor(month)*year,
+       data = fred_ts)
+
+
+summary(mod_fit)
+AIC(mod_fit)
+
+autoplot(fred_ts[, 'consume_price'],
+         series = 'Data') + 
+  autolayer(fitted(mod_fit),
+            series = 'Fitted')
+
+checkresiduals(mod_fit)
+
+
+
+# needs only y value (univariate time series)
+arima_mod <- 
+  auto.arima(
+    fred$consume_price,
+    seasonal = FALSE
+    )
+
+confint(arima_mod)
+checkresiduals(arima_mod)
+# significant p value indicates autocorrelation
+
+forecast(arima_mod)
+autoplot(
+  forecast(arima_mod)
+  )
+
+arima_fixed <- 
+  arima(
+    fred$consume_price,
+    order = c(1, 1, 3),
+    fixed = c(0, 0, NA, NA)
+    )
+
+confint(arima_fixed)
+checkresiduals(arima_fixed)
+
+forecast(arima_fixed)
+autoplot(
+  forecast(
+    arima_fixed
+  )
+)
+
+# prophet
+
+fred_prop <- 
+  fred %>% 
+  rename(y = consume_price,
+         ds = date)
+
+prop_model <- 
+  prophet(fred_prop)
+
+future <- 
+  make_future_dataframe(
+    prop_model,
+    periods = 36,
+    freq = 'month'
+  )
+
+fcast_prop <- 
+  predict(
+    prop_model,
+    future
+    )
+# View(fcast_prop)
+
+plot(
+  prop_model,
+  fcast_prop
+)
+
+prophet_plot_components(
+  prop_model,
+  fcast_prop
+)
+
+
+lambda <- BoxCox.lambda(fred_prop[, 'y'])
+autoplot(BoxCox(fred_prop[, 'y'],
+                lambda))

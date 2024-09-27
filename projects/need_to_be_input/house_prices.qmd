@@ -1,0 +1,156 @@
+---
+title: "Untitled"
+format: html
+---
+
+getwd()
+
+library(tidyverse)
+library(tidymodels)
+
+data <- read_csv("C:/Users/cpppe/Desktop/github_projects/data_visualizations/kaggle/house_prices/data/train.csv") %>% 
+  janitor::clean_names()
+
+sub <- data %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(sale_price = log(sale_price))
+
+sub %>% 
+  ggplot(aes(sale_price)) +
+  geom_histogram(color = "white", fill = "gold", bins = 20) +
+  theme_dark()
+
+
+
+set.seed(8321)
+
+house_split <- initial_split(sub)
+
+house_train <- training(house_split)
+house_test <- testing(house_split)
+
+house_fold <- vfold_cv(house_train, v = 10)
+
+set.seed(8321)
+initial_rec <- recipe(sale_price ~ ., data = house_train) %>% 
+  update_role(id, new_role = "ID") %>% 
+  step_zv(all_predictors()) %>% 
+  step_unknown(all_nominal_predictors()) %>% 
+  step_novel(all_nominal_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_impute_median(all_numeric_predictors()) %>% 
+  step_naomit(all_predictors())
+
+# prep(initial_rec) %>% 
+#   bake(new_data = NULL) %>% 
+#   View()
+
+set.seed(8321)
+base_model <- linear_reg() %>% 
+  set_engine("glmnet") %>% 
+  set_mode("regression") %>% 
+  set_args(penalty = tune(),
+           mixture = tune())
+
+set.seed(8321)
+house_flow <- workflow() %>% 
+  add_recipe(initial_rec) %>% 
+  add_model(base_model)
+
+set.seed(8321)
+lin_grid <- grid_regular(penalty(), mixture(), levels = 10)
+
+linear_fit <- tune_grid(house_flow,
+                        resamples = house_fold,
+                        grid = lin_grid,
+                        metrics = metric_set(rmse),
+                        control = control_resamples(verbose = TRUE,
+                                                    save_pred = TRUE))
+
+collect_metrics(linear_fit)
+show_best(linear_fit, metric = "rmse", n = 10)
+
+# this lasso regression needs more feature engineering
+# num_only <- house_train %>% 
+  # select_if(is.numeric)
+
+# purrr::map2(num_only, names(num_only), ~ggplot(num_only, aes(.x, log(sale_price))) + geom_point() +
+#               geom_smooth(method = "lm", se = FALSE, color = "red") +
+#               geom_smooth(method = "loess", se = FALSE) +
+#               labs(title = glue::glue("{.y}"))
+# )
+
+
+set.seed(8321)
+updated_rec <- recipe(sale_price ~ ., data = house_train) %>% 
+  update_role(id, new_role = "ID") %>% 
+  step_zv(all_predictors()) %>% 
+  step_unknown(all_nominal_predictors()) %>% 
+  step_novel(all_nominal_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_impute_median(all_numeric_predictors()) %>% 
+  step_naomit(all_predictors()) %>% 
+  step_poly(year_built, bsmt_unf_sf, x2nd_flr_sf) %>%
+  step_corr(all_numeric_predictors(), threshold = .9) %>% 
+  step_interact(terms =~ overall_qual:all_numeric_predictors())
+
+up_flow <- house_flow %>% 
+  update_recipe(updated_rec)
+
+set.seed(8321)
+poly_fit <- tune_grid(up_flow,
+                        resamples = house_fold,
+                        grid = lin_grid,
+                        metrics = metric_set(rmse),
+                        control = control_resamples(verbose = TRUE,
+                                                    save_pred = TRUE))
+
+collect_metrics(poly_fit)
+show_best(poly_fit, metric = "rmse", n = 10)
+
+# validate
+best_fit <- poly_fit %>%
+  select_best(metric = "rmse")
+
+
+# use this for predictions
+final_flow <- finalize_workflow(up_flow, best_fit)
+
+set.seed(8321)
+lasso_final_fit <- last_fit(final_flow,
+                             split = house_split)
+
+lasso_final_fit %>%
+  collect_metrics()
+
+lasso_final_fit %>%
+  pluck(".workflow", 1) %>%
+  extract_fit_parsnip() %>%
+  vip::vip(num_features = 20) +
+  theme_minimal()
+
+lasso_final_fit %>% collect_predictions() %>% head(10)
+
+# fitting final model
+final_model <- fit(final_flow, sub)
+
+
+set.seed(8321)
+test <- read_csv("C:/Users/cpppe/Desktop/github_projects/data_visualizations/kaggle/house_prices/data/test.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(sale_price = log(sale_price))
+
+house_pred <- predict(final_model, new_data = test)  %>% 
+  rowid_to_column()
+
+pred_frame <- tibble(Id = house_pred$rowid, SalePrice = house_pred$.pred)
+
+ggplot() + 
+  geom_point(data = sub, aes(id, sale_price), color = "gold") +
+  geom_point(data = pred_frame, aes(Id, SalePrice), color = "black") + 
+  theme_minimal()
+
+# write.csv(pred_frame, "my_submission.csv")

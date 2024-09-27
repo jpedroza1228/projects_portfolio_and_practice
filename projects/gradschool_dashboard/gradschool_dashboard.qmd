@@ -1,0 +1,426 @@
+---
+title: "University of Oregon Graduate School Dashboard"
+format: html
+  #flexdashboard::flex_dashboard:
+  #  orientation: columns
+  #  vertical_layout: fill
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+
+theme_set(theme_light())
+
+uo_years <- function(year){
+  
+  link <- glue::glue("https://raw.githubusercontent.com/jpedroza1228/gradschool_dashboard/main/pushable_data/grouped_data_{year}.csv")
+  
+  read_csv(link)
+  
+}
+
+uo <- map_df(14:19, ~uo_years(.x))
+
+```
+
+University of Oregon
+=======================================================================
+
+Code can be found [here]() and the actual dashboard can be found [here](https://jpedroza1228.github.io/gradschool_dashboard/). This document is to show the plots in a quarto document as part of a repo that has all of my projects/visualizations with a product to show.
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+This dashboard is for those in the Graduate School that are interested in departments allocation of teaching graduate employments (GEs) and undergraduate student credit hours.
+
+Summarized data can be found [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/pushable_data)
+Synthetic data can be found [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/synthetic_data/synthetic_csv)
+
+**Common terms used in all visuals and tables**\n
+
+CAS = College of Arts & Sciences\n
+
+COD = College of Design\n
+
+COE = College of Education\n
+
+LCOB = Lundquist College of Business\n
+
+SOJC = School of Journalism & Communication\n
+
+LAW = Law School\n
+
+SOMD = School of Music & Dance\n
+
+GE = Graduate Employment\n
+
+FTE = Full-time Equivalency\n
+
+UO = University of Oregon\n
+
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Number of Teaching GEs Across UO Departments
+
+```{r}
+#| label: number teaching ge
+#| echo: false
+#| eval: true
+#| warning: false
+
+uo |>
+  mutate(
+    term = full_term
+  ) |>
+  separate(
+    col = term,
+    into = c("remove", "year", "actual_year"), 
+    sep = "0"
+  ) |>
+  group_by(
+    year,
+    college,
+    course_dept
+  ) |>
+  mutate(
+    sum_teach_ge = sum(teach_ge_n),
+    year = str_remove(year, "20"),
+    college = case_when(
+      college == 'School of Music & Dance' ~ 'SOMD',
+      college == 'School of Law' ~ 'LAW',
+      college == 'School of Journalism & Communication' ~ 'SOJC',
+      college == 'Lundquist College of Business' ~ 'LCOB',
+      college == 'College of Education' ~ 'COE',
+      college == 'College of Design' ~ 'COD',
+      college == 'College of Arts & Sciences' ~ 'CAS'
+    )
+  ) |>
+  ungroup() |> 
+  ggplot(aes(fct_reorder(as.factor(course_dept), college), sum_teach_ge)) +
+  geom_point(aes(color = year)) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 1200),
+                     expand = c(0, 0)) +
+  scale_color_manual(values = c("#6a1f25", "#7fb7b7", "#669b3e", "#ddca72", "#7f5d47", "#F7471A")) +
+  labs(title = "Number of Teaching GEs\nAcross UO Departments",
+       x = "",
+       y = "Number of GEs") +
+  annotate("text", x = 20, y = 1000, label = "2014",
+           color = "#6a1f25", size = 4) +
+    annotate("text", x = 18, y = 1000, label = "2015",
+           color = "#7fb7b7", size = 4) +
+    annotate("text", x = 16, y = 1000, label = "2016",
+           color = "#669b3e", size = 4) +
+    annotate("text", x = 14, y = 1000, label = "2017",
+           color = "#ddca72", size = 4) +
+    annotate("text", x = 12, y = 1000, label = "2018",
+           color = "#7f5d47", size = 4) +
+    annotate("text", x = 10, y = 1000, label = "2019",
+           color = "#F7471A", size = 4) +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.text.y = element_text(size = 6))
+
+```
+
+### Undergraduate Course Credits Across Departments
+
+```{r}
+#| label: undergrad course credits
+#| echo: false
+#| eval: true
+#| warning: false
+
+dept_year <- uo |> 
+  mutate(
+    term = full_term
+    ) |> 
+  separate(
+    col = term,
+    into = c('remove', 'year', 'actual_term'),
+    sep = '0') |> 
+    ggplot(
+      aes(
+        as.factor(full_term),
+        mean_credit
+        )
+      ) +
+    geom_line(
+      aes(
+        color = course_dept,
+        group = course_dept
+        )
+      ) +
+    geom_point(
+      alpha = .5,
+      aes(
+        color = course_dept
+        )
+      ) +
+    scale_x_discrete(
+      breaks = c(201401, 201402, 201403,
+      201501, 201502, 201503,
+      201601, 201602, 201603,
+      201701, 201702, 201703,
+      201801, 201802, 201803,
+      201901, 201902, 201903
+      ),
+      label = c(
+        "F14", "W14", "S14",
+        "F15", "W15", "S15",
+        "F16", "W16", "S16",
+        "F17", "W17", "S17",
+        "F18", "W18", "S18",
+        "F19", "W19", "S19"
+        )
+      )  +
+  labs(
+    title = "Undergraduate Course Credits Over Time",
+       subtitle = "Click on the department in the legend to view one department",
+       x = "Academic Term",
+       y = "Average Undergraduate Credit Hours"
+       ) +
+  theme(legend.title = element_blank())
+
+dept_year_plot <- ggplotly(dept_year) |> 
+  layout(legend = list(title = list(text = ""))) |>
+  partial_bundle() |> 
+  toWebGL()
+
+dept_year_plot
+
+```
+
+### Teaching GE Allocation Across Departments
+
+```{r}
+#| label: teaching ge
+#| echo: false
+#| eval: true
+#| warning: false
+
+dept_year_ge <- uo |> 
+  mutate(
+    term = full_term
+    ) |> 
+  separate(
+    col = term, 
+    into = c(
+      'remove', 
+      'year', 
+      'actual_term'
+      ), 
+    sep = '0'
+    ) |> 
+  ggplot(
+    aes(
+      as.factor(full_term), 
+      teach_ge_n
+      )
+    ) +
+  geom_line(
+    aes(
+      color = course_dept,
+      group = course_dept
+      )
+    ) +
+  geom_point(
+    alpha = .5,
+    aes(
+      color = course_dept
+      )
+    ) +
+  scale_x_discrete(
+    breaks = c(201401, 201402, 201403,
+    201501, 201502, 201503,
+    201601, 201602, 201603,
+    201701, 201702, 201703,
+    201801, 201802, 201803,
+    201901, 201902, 201903
+    ),
+    label = c(
+      "F14", "W14", "S14",
+      "F15", "W15", "S15",
+      "F16", "W16", "S16",
+      "F17", "W17", "S17",
+      "F18", "W18", "S18",
+      "F19", "W19", "S19"
+      )
+    ) +
+  labs(
+    title = "Teaching GE Allocation Over Time",
+    subtitle = "Click on the department in the legend to view one department",
+    x = "Academic Term",
+    y = "Number of Teaching GEs For Each Department"
+    ) +
+  theme(
+    legend.title = element_blank()
+    )
+
+dept_year_plot_ge <- ggplotly(dept_year_ge) |> 
+  layout(legend = list(title = list(text = ""))) |>
+  partial_bundle() |> 
+  toWebGL()
+
+dept_year_plot_ge
+```
+
+Findings
+=======================================================================
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### FTE & Credits
+
+```{r}
+#| label: fte and credits function
+#| #| echo: false
+#| eval: true
+#| warning: false
+
+fte_credit <- uo |> 
+  mutate(
+    term = full_term
+    ) |> 
+  separate(
+    col = term, 
+    into = c(
+      "remove",
+      "year",
+      "actual_term"
+      ), 
+    sep = "0"
+    ) |> 
+  mutate(
+    full_term = case_when(
+      full_term == "201401" ~ "F14",
+      full_term == "201402" ~ "W14",
+      full_term == "201403" ~ "S14",
+      full_term == "201501" ~ "F15",
+      full_term == "201502" ~ "W15",
+      full_term == "201503" ~ "S15",
+      full_term == "201601" ~ "F16",
+      full_term == "201602" ~ "W16",
+      full_term == "201603" ~ "S16",
+      full_term == "201701" ~ "F17",
+      full_term == "201702" ~ "W17",
+      full_term == "201703" ~ "S17",
+      full_term == "201801" ~ "F18",
+      full_term == "201802" ~ "W18",
+      full_term == "201803" ~ "S18",
+      full_term == "201901" ~ "F19",
+      full_term == "201902" ~ "W19",
+      full_term == "201903" ~ "S19"
+    ),
+    year = str_remove(year, "20"),
+    college = case_when(
+      college == 'School of Music & Dance' ~ 'SOMD',
+      college == 'School of Law' ~ 'LAW',
+      college == 'School of Journalism & Communication' ~ 'SOJC',
+      college == 'Lundquist College of Business' ~ 'LCOB',
+      college == 'College of Education' ~ 'COE',
+      college == 'College of Design' ~ 'COD',
+      college == 'College of Arts & Sciences' ~ 'CAS'
+    )
+  )
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+
+fte_credit |>
+  ggplot(
+    aes(
+      teach_ge_n, mean_credit
+      )
+    ) +
+  geom_jitter(
+    aes(
+      color = as.factor(full_term)
+      )
+    ) +
+  geom_smooth(
+    method = "lm", 
+    se = FALSE, 
+    color = "black", 
+    linewidth = 1.25
+    ) +
+  facet_wrap(
+    ~year
+  ) +
+  labs(
+    title = "Scatterplot of Number of Teaching GEs\nand Average Undergraduate Course Credit",
+    x = "Number of Teaching GEs",
+    y = "Average Course Credits"
+    ) +
+  theme(
+    legend.position = "none"
+    )
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+
+fte_credit |>
+  ggplot(
+    aes(
+      teach_ge_n, mean_credit
+      )
+    ) +
+  geom_jitter(
+    aes(
+      color = as.factor(full_term)
+      )
+    ) +
+  geom_smooth(
+    method = "lm", 
+    se = FALSE, 
+    color = "black", 
+    linewidth = 1.25
+    ) +
+  facet_wrap(
+    ~year
+  ) +
+  labs(
+    title = "Scatterplot of Number of Teaching GEs\nand Average Undergraduate Course Credit",
+    x = "Number of Teaching GEs",
+    y = "Average Course Credits"
+    ) +
+  theme(
+    legend.position = "none"
+    )
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Growth Models
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+
+library(sjPlot)
+library(lme4)
+library(lmerTest)
+
+intercept_model <- lmer(mean_credit ~ full_term + (1 | college) + (1 | college:course_dept), data = uo)
+ge_n_model <- lmer(mean_credit ~ full_term + teach_ge_n + (1 | college) + (1 | college:course_dept), data = uo)
+ge_fte_model <- lmer(mean_credit ~ full_term + teach_ge_fte + (1 | college) + (1 | college:course_dept), data = uo)
+
+tab_model(intercept_model, ge_n_model, ge_fte_model)
+
+```

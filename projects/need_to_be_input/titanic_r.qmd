@@ -1,0 +1,265 @@
+---
+title: "Untitled"
+format: html
+---
+
+library(tidyverse)
+library(glmnet)
+library(tidymodels)
+library(ranger)
+
+train <- read_csv('kaggle/titanic/train.csv') %>% 
+  janitor::clean_names()
+
+glimpse(train)
+
+train <- train %>%
+  mutate(
+    pclass = recode(pclass, '1' = 'first_class',
+                    '2' = 'second_class',
+                    '3' = 'third_class'),
+    stop = recode(embarked, 'C' = 'second stop',
+                  'Q' = 'third stop',
+                  'S' = 'first stop'),
+    survived = as.factor(survived)
+  )
+
+train <- train %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-name,
+         -ticket,
+         -cabin)
+
+inspectdf::inspect_na(train)
+
+set.seed(382022)
+
+titanic_split <- initial_split(train,
+                               prop = .8,
+                               strata = 'survived')
+
+titanic_train <- training(titanic_split)
+titanic_test <- testing(titanic_split)
+
+titanic_fold <- vfold_cv(titanic_train, v = 10)
+
+set.seed(382022)
+
+# make changes to the recipe, look at quadratic relationships and potential interactions, include splines
+
+initial_rec <- recipe(survived ~ .,
+                      data = titanic_train) %>%
+  update_role(passenger_id, new_role = "id") %>% 
+  step_impute_median(age) %>% 
+  step_naomit(embarked, stop, skip = TRUE) %>% 
+  step_unknown(all_nominal_predictors()) %>%
+  step_novel(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_nzv(all_predictors())
+
+
+pre_initial <- prep(initial_rec)
+juice_boat <- juice(pre_initial)
+
+juice_boat %>% glimpse()
+
+set.seed(382022)
+
+# logit_model <- logistic_reg() %>%
+#   set_engine('glmnet') %>%
+#   set_mode('classification') %>% 
+#   set_args(
+#    penalty = tune(),
+#    mixture = tune()
+#        )
+
+# set.seed(382022)
+
+# titanic_flow <- workflow() %>%
+#   add_recipe(initial_rec) %>%
+#   add_model(logit_model)
+
+# set.seed(382022)
+# logit_grid <- grid_regular(penalty(), mixture(), levels = 50)
+
+# logit_fit <- tune_grid(titanic_flow,
+                       # resamples = titanic_fold,
+                       # grid = logit_grid,
+                       # control = control_resamples(verbose = TRUE,
+                                                   # save_pred = TRUE))
+
+# logit_fit$.notes[[10]]$.notes[[1]]
+
+# collect_metrics(logit_fit)
+# show_best(logit_fit, metric = "accuracy", n = 10)
+# show_best(logit_fit, metric = "roc_auc", n = 10)
+
+(cores <- parallel::detectCores())
+
+set.seed(382022)
+
+rf_model <- rand_forest(trees = 1000) %>% 
+  set_engine('ranger',
+  num.threads = cores,
+  importance = "permutation",
+  verbose = TRUE) %>% 
+  set_mode('classification') %>% 
+  set_args(
+    mtry = tune(),
+    min_n = tune(),
+	
+  )
+
+titanic_flow <- workflow() %>%
+  add_recipe(initial_rec) %>%
+  add_model(rf_model)
+
+# set.seed(382022)
+
+# titanic_rf <- titanic_flow %>% 
+  # update_model(rf_model)
+
+set.seed(382022)
+
+# rf_grid <- grid_regular(tree_depth(),
+#                         min_n(),
+#                         levels = 20)
+
+doParallel::registerDoParallel()
+
+set.seed(382022)
+
+rf_fit <- tune_grid(
+  # titanic_rf,
+  titanic_flow,
+  resamples = titanic_fold,
+  grid = 30,
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE)
+)
+
+# rf_fit$.notes[[1]]$.notes[1]
+
+collect_metrics(rf_fit)
+show_best(rf_fit, metric = "accuracy", n = 10)
+show_best(rf_fit, metric = "roc_auc", n = 10)
+
+# library(xgboost)
+
+# set.seed(382022)
+
+# xgb_model <- boost_tree(trees = 1000) %>%
+#   set_engine('xgboost') %>%
+#   set_mode('classification') %>%
+#   set_args(
+#     tree_depth = tune(),
+#     min_n = tune(),
+#     loss_reduction = tune(),
+#     sample_size = tune(),
+#     mtry = tune(),
+#     learn_rate = tune()
+#   )
+
+# set.seed(382022)
+
+# xgb_grid <- grid_latin_hypercube(
+#   tree_depth(),
+#   min_n(),
+#   loss_reduction(),
+#   sample_size = sample_prop(),
+#   finalize(mtry(),
+#            titanic_train),
+#   learn_rate(),
+#   size = 50
+# )
+
+# set.seed(382022)
+
+# titanic_xgb <- titanic_rf %>% 
+#   update_model(xgb_model)
+
+# set.seed(382022)
+
+# xgb_fit <- tune_grid(
+#   titanic_xgb,
+#   resamples = titanic_fold,
+#   grid = xgb_grid,
+#   control = control_grid(verbose = TRUE,
+#                               save_pred = TRUE)
+# )
+
+# xgb_fit$.notes[[1]]$.notes[1]
+
+# collect_metrics(xgb_fit)
+# show_best(xgb_fit, metric = "accuracy", n = 10)
+# show_best(xgb_fit, metric = "roc_auc", n = 10)
+
+
+set.seed(382022)
+
+best_fit <- rf_fit %>%
+  select_best(metric = 'accuracy')
+
+final_flow <- finalize_workflow(titanic_flow, best_fit)
+final_flow
+
+final_fit <- last_fit(final_flow,
+                      split = titanic_split)
+
+final_fit %>%
+  collect_metrics()
+
+final_fit %>%
+  collect_predictions()
+
+final_model <- fit(final_flow, train)
+final_model
+
+test <-read_csv('kaggle/titanic/test.csv') %>% 
+  janitor::clean_names() %>% 
+  mutate_if(is.numeric, ~ifelse(is.na(.), median(., na.rm = TRUE), .)) %>% 
+  mutate(
+    pclass = recode(pclass, '1' = 'first_class',
+                    '2' = 'second_class',
+                    '3' = 'third_class'),
+    stop = recode(embarked, 'C' = 'second stop',
+                  'Q' = 'third stop',
+                  'S' = 'first stop')
+  ) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-name,
+         -ticket,
+         -cabin)
+
+inspectdf::inspect_na(test)
+
+glimpse(train)
+glimpse(test)
+
+survive_pred <- predict(final_model, test) %>%
+  rowid_to_column()
+
+test_pred <- survive_pred %>% 
+  bind_cols(test) %>% 
+  rename(survived = .pred_class)
+
+glimpse(test_pred)
+
+
+
+ggplot(test_pred,
+       aes(passenger_id, as.numeric(as.character(survived)))) + 
+  geom_point(alpha = .5) + 
+  geom_smooth(method = 'glm',
+              se = FALSE,
+              method.args = list(family = 'binomial')) +
+  theme_light()
+
+test_pred <- test_pred %>% 
+  select(passenger_id,
+         survived) %>% 
+  rename(PassengerId = passenger_id,
+         Survived = survived)
+
+write.csv(test_pred,
+          'submission.csv')
