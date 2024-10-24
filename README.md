@@ -9,6 +9,10 @@ If there are any problems viewing the html files, you can include the following 
 
 https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/visualization_portfolio/portfolio_R.html
 
+## Society of Prevention Research's 2018 Cup Latent Class Analysis Visualizations
+
+https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/spr_cup_lca/spr_visuals.html
+
 ## Students with Cognitive Disabilities & Suspension Counts
 
 https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/student_suspensions/ca_student_suspension.html
@@ -31,4 +35,4 @@ https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_por
 
 R:
 
-https://html-preview.github.io/?url=
+Coming Soon!
