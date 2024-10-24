@@ -1,0 +1,597 @@
+---
+title: "Heart Disease Prediction in R"
+format: html
+---
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(tidymodels)
+library(readxl)
+
+heart <- read_excel(here::here('projects/heart_disease_prediction/data', 'heart.xlsx'))
+
+theme_set(theme_light())
+```
+
+```{r}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+
+map(
+  heart |> select(cp, restecg, slope, ca, thal),
+  ~table(.x)
+)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+heart_dummy <- heart |>
+  mutate(
+    cp0 = case_when(
+      cp == 0 ~ 1,
+      cp == 1 ~ 0,
+      cp == 2 ~ 0,
+      cp == 3 ~ 0
+    ),
+    cp1 = case_when(
+      cp == 0 ~ 0,
+      cp == 1 ~ 1,
+      cp == 2 ~ 0,
+      cp == 3 ~ 0
+    ),
+    cp2 = case_when(
+      cp == 0 ~ 0,
+      cp == 1 ~ 0,
+      cp == 2 ~ 1,
+      cp == 3 ~ 0
+    ),
+    cp3 = case_when(
+      cp == 0 ~ 0,
+      cp == 1 ~ 0,
+      cp == 2 ~ 0,
+      cp == 3 ~ 1
+    ),
+    thal0 = case_when(
+      thal == 0 ~ 1,
+      thal == 1 ~ 0,
+      thal == 2 ~ 0,
+      thal == 3 ~ 0
+    ),
+    thal1 = case_when(
+      thal == 0 ~ 0,
+      thal == 1 ~ 1,
+      thal == 2 ~ 0,
+      thal == 3 ~ 0
+    ),
+    thal2 = case_when(
+      thal == 0 ~ 0,
+      thal == 1 ~ 0,
+      thal == 2 ~ 1,
+      thal == 3 ~ 0
+    ),
+    thal3 = case_when(
+      thal == 0 ~ 0,
+      thal == 1 ~ 0,
+      thal == 2 ~ 0,
+      thal == 3 ~ 1
+    ),
+    restecg0 = case_when(
+      restecg == 0 ~ 1,
+      restecg == 1 ~ 0,
+      restecg == 2 ~ 0
+    ),
+    restecg1 = case_when(
+      restecg == 0 ~ 0,
+      restecg == 1 ~ 1,
+      restecg == 2 ~ 0
+    ),
+    restecg2 = case_when(
+      restecg == 0 ~ 0,
+      restecg == 1 ~ 0,
+      restecg == 2 ~ 1
+    ),
+    slope0 = case_when(
+      slope == 0 ~ 1,
+      slope == 1 ~ 0,
+      slope == 2 ~ 0
+    ),
+    slope1 = case_when(
+      slope == 0 ~ 0,
+      slope == 1 ~ 1,
+      slope == 2 ~ 0
+    ),
+    slope2 = case_when(
+      slope == 0 ~ 0,
+      slope == 1 ~ 0,
+      slope == 2 ~ 1
+    ),
+    ca0 = case_when(
+      ca == 0 ~ 1,
+      ca == 1 ~ 0,
+      ca == 2 ~ 0,
+      ca == 3 ~ 0,
+      ca == 4 ~ 0
+    ),
+    ca1 = case_when(
+      ca == 0 ~ 0,
+      ca == 1 ~ 1,
+      ca == 2 ~ 0,
+      ca == 3 ~ 0,
+      ca == 4 ~ 0
+    ),
+    ca2 = case_when(
+      ca == 0 ~ 0,
+      ca == 1 ~ 0,
+      ca == 2 ~ 1,
+      ca == 3 ~ 0,
+      ca == 4 ~ 0
+    ),
+    ca3 = case_when(
+      ca == 0 ~ 0,
+      ca == 1 ~ 0,
+      ca == 2 ~ 0,
+      ca == 3 ~ 1,
+      ca == 4 ~ 0
+    ),
+    ca4 = case_when(
+      ca == 0 ~ 0,
+      ca == 1 ~ 0,
+      ca == 2 ~ 0,
+      ca == 3 ~ 0,
+      ca == 4 ~ 1
+    )
+  ) |>
+  select(
+    age:sex,
+    trestbps:fbs,
+    thalach,
+    exang,
+    oldpeak,
+    target,
+    cp0:ca4
+  )
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+#| 
+
+heart_dummy |>
+  ggplot(
+    aes(
+      age,
+      chol
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      age,
+      trestbps
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      age,
+      thalach
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+
+heart_dummy |>
+  ggplot(
+    aes(
+      age,
+      oldpeak
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      chol,
+      trestbps
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      chol,
+      thalach
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      chol,
+      oldpeak
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      trestbps,
+      thalach
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      trestbps,
+      oldpeak
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+
+heart_dummy |>
+  ggplot(
+    aes(
+      thalach,
+      oldpeak
+      )
+   ) + 
+  geom_point(
+    alpha = .3
+    ) +
+  geom_smooth(
+    aes(
+      color = as.factor(target)
+      ), 
+      method = 'lm', 
+      se = FALSE
+      ) +
+  theme_light()
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+heart_dummy <- heart_dummy |>
+  mutate(
+    target = as.factor(target)
+  ) |>
+  select(
+    -c(
+      cp0,
+      thal0,
+      restecg0,
+      slope0,
+      ca0
+    )
+  )
+
+heart_split <- initial_split(heart_dummy,
+                             prop = .8,
+                             strata = 'target')
+
+heart_train <- training(heart_split)
+heart_test <- testing(heart_split)
+
+heart_fold <- vfold_cv(heart_train, v = 5)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+
+library(xgboost)
+
+set.seed(12345)
+
+boost_model <- boost_tree() |> 
+  set_mode('classification') |> 
+  set_engine('xgboost') |> 
+  set_args(
+    trees = 1000,
+    tree_depth = tune(),
+    min_n = tune(),
+    loss_reduction = tune(),
+    sample_size = tune(),
+    mtry = tune(),
+    learn_rate = tune()
+  )
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+rec <- recipe(target ~ .,
+              data = heart_train) |>
+  step_unknown(all_nominal_predictors()) |>
+  step_novel(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_nzv(all_predictors())
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+flow <- workflow() |> 
+  add_model(boost_model) |> 
+  add_recipe(rec)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+boost_grid <- grid_latin_hypercube(
+  tree_depth(),
+  min_n(),
+  loss_reduction(),
+  sample_size = sample_prop(),
+  finalize(mtry(),
+           heart_train),
+  learn_rate(),
+  size = 20
+)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+xgb_fit <- tune_grid(
+  flow,
+  resamples = heart_fold,
+  grid = boost_grid,
+  control = control_grid(verbose = TRUE,
+                              save_pred = TRUE)
+)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+collect_metrics(xgb_fit) |> 
+  mutate(
+    across(
+      -c(
+        .metric,
+        .estimator,
+        .config
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable::reactable()
+
+show_best(xgb_fit, metric = "accuracy", n = 5) |> 
+  mutate(
+    across(
+      -c(
+        .metric,
+        .estimator,
+        .config
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable::reactable()
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+set.seed(12345)
+
+# put this in visual
+best_fit <- xgb_fit |>
+  select_best(metric = 'accuracy')
+
+best_fit |> 
+  mutate(
+    across(
+      -.config,
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable::reactable()
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+final_flow <- finalize_workflow(flow, best_fit)
+
+final_fit <- last_fit(final_flow,
+                      split = heart_split)
+
+final_fit |>
+  collect_metrics() |> 
+  mutate(
+    across(
+      -c(
+        .metric,
+        .estimator,
+        .config
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable::reactable()
+
+final_fit |>
+  collect_predictions()
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+library(vip)
+
+final_model <- fit(final_flow, heart_dummy)
+```
+
+
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
+
+final_model |> 
+  extract_fit_parsnip() |> 
+  vi() |> 
+  janitor::clean_names() |> 
+  mutate(importance = abs(importance)) |> 
+  ggplot(aes(fct_reorder(variable, importance), importance)) + 
+  geom_col(color = 'white',
+           fill = 'darkgreen') + 
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 0))
+```

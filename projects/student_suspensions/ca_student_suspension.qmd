@@ -110,6 +110,15 @@ data <- data |>
       "DC"
     )
   )
+
+data <- data |>
+  mutate(
+    reporting_category = as.factor(reporting_category),
+    reporting_category = relevel(
+      reporting_category,
+      "DC_SLD"
+    )
+  )
 ```
 
 ## Variables of interest in data
@@ -126,7 +135,7 @@ data <- data |>
     - DC_MD = Multiple Disabilities (MD)
     - DC_OHI = Other Health Impairment (OHI)
     - DC_OI = Orthopedic Health Impairment (OI)
-    - DC_SLD = Specific Learning Disability (SLD)
+    - DC_SLD = Specific Learning Disability (SLD) **Reference Group**
     - DC_SLI = Speech or Language Impairment (SLI)
     - DC_TBI = Traumatic Brain Injury (TBI)
     - DC_VI = Visual Impairment (VI)
@@ -218,17 +227,54 @@ cor.test(data$ps_rcgt80_n, data$sped_enr_n)
 
 ## Modeling
 
+### No Covariates
+
+```{r}
+fit_no <- brm(
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 10)", class = "b"),
+    set_prior("normal(0, 10)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+fit2_no <- brm(
+  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  data = data,
+  family = gaussian(),
+  prior = c(
+    set_prior("normal(0, 10)", class = "b"),
+    set_prior("normal(0, 10)", class = "sd")
+  ),
+  cores = parallel::detectCores(),
+  control = list(adapt_delta = .95),
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+saveRDS(fit_no, here::here("projects/student_suspensions/data", "model_fit_no_covariates.RDS"))
+saveRDS(fit2_no, here::here("projects/student_suspensions/data", "unduplicated_model_fit_no_covariates.RDS"))
+```
+
+### With Covariates
+
 ```{r}
 #| eval: false
 #| echo: true
 
 fit <- brm(
-  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + cumulative_enrollment + total_suspensions + (1 | county_name),
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 1)", class = "b"),
-    set_prior("normal(0, 1)", class = "sd")
+    set_prior("normal(0, 10)", class = "b"),
+    set_prior("normal(0, 10)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -237,12 +283,12 @@ fit <- brm(
 )
 
 fit2 <- brm(
-  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
+  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + cumulative_enrollment + total_suspensions  + (1 | county_name),
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 1)", class = "b"),
-    set_prior("normal(0, 1)", class = "sd")
+    set_prior("normal(0, 10)", class = "b"),
+    set_prior("normal(0, 10)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -250,20 +296,90 @@ fit2 <- brm(
   backend = "cmdstanr"
 )
 
-# saveRDS(fit, here::here("projects/student_suspensions/data", "model_fit.RDS"))
-# saveRDS(fit, here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+saveRDS(fit, here::here("projects/student_suspensions/data", "model_fit_w_covariates.RDS"))
+saveRDS(fit2, here::here("projects/student_suspensions/data", "unduplicated_model_fit_w_covariates.RDS"))
 ```
 
 ```{r}
 #| eval: true
 #| echo: false
 
-fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit.RDS"))
-fit2 <- read_rds(here::here("projects/student_suspensions/data", "unduplicated_model_fit.RDS"))
+fit_no <- read_rds(here::here("projects/student_suspensions/data", "model_fit_no_covariates.RDS"))
+fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit_w_covariates.RDS"))
 
 ```
 
 ### Defiance Only Suspensions
+
+```{r}
+#| eval: true
+#| echo: false
+
+tidy(fit_no) |>
+  mutate(
+    across(
+      -c(
+        effect,
+        component,
+        group,
+        term
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+
+none <- ranef(fit_no)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+
+none
+```
+
+**Findings Without Covariates**
+
+- students with disabilities that were in regular classes 80% of the time did not have much of a difference in suspension counts
+- students that were deaf or had hearing impairments that were in regular classes 80% of the time had greater log odds of being suspended for defiance in comparison to students with specific learning disabilities (2.39, 95% Credible Intervals: 1.32, 3.43)
+- students that had emotional disturbance disabilities that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.35, 95% Credible Intervals: .24, .46)
+- students that were hard of hearing that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.16, 95% Credible Intervals: .07, .25)
+- students with intellectual disabilities that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.69, 95% Credible Intervals: .46, .92)
+- students with multiple disabilities that were in regular classes 80% of the time had greater log odds of being suspended for defiance in comparison to students with specific learning disabilities (1.51, 95% Credible Intervals: .28, 2.73) **MAYBE**
+- students with orthopedic health impairments that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.40, 95% Credible Intervals: .19, .60)
+
+**Random Findings without Covariates**
+
+- It seems that Sacramento is providing more suspensions to students in special education classes more than any other California county.
+- The bordering counties of Sacramento, Stanislaus, San Joaquin, and Solano counties all have the highest 
+
+**Findings with Covariates**
+
+- Sacramento and Stanislaus counties are suspending more students in special education classes more than any other California county. This is even when considering the cumulative enrollment in the counties and the total number of suspensions.
+
+### Unduplicated Defiance Only Suspensions
 
 ```{r}
 #| eval: true
@@ -283,7 +399,7 @@ tidy(fit) |>
   ) |>
   reactable()
 
-ranef(fit)$county_name |>
+covariates <- ranef(fit)$county_name |>
   as_tibble(rownames = "county") |>
   ggplot(
     aes(
@@ -310,57 +426,19 @@ ranef(fit)$county_name |>
   theme(
     legend.position = "none"
   )
+
+covariates
 ```
 
-### Unduplicated Defiance Only Suspensions
+**Findings with Covariates**
+
+- When considering unduplicated number of suspensions, Sacramento still had the highest number of suspensions for defiance only; however the difference with other counties was not as drastic. Further examination is needed into why Sacramento is suspending students in special education courses.
 
 ```{r}
-#| eval: true
-#| echo: false
+library(patchwork)
 
-tidy(fit2) |>
-  mutate(
-    across(
-      -c(
-        effect,
-        component,
-        group,
-        term
-      ),
-      ~round(.x, 2)
-    )
-  ) |>
-  reactable()
-
-ranef(fit2)$county_name |>
-  as_tibble(rownames = "county") |>
-  ggplot(
-    aes(
-      fct_reorder(
-        county,
-        Estimate.Intercept
-      ),
-      Estimate.Intercept
-    )
-  ) +
-  geom_errorbar(
-    aes(
-      ymin = Q2.5.Intercept,
-      ymax = Q97.5.Intercept
-      )
-    ) +
-  geom_point(
-    aes(
-      color = county
-    ),
-    size = 4
-  ) +
-  coord_flip() +
-  theme(
-    legend.position = "none"
-  )
+none + covariates
 ```
-
 
 ## All Code Below
 
