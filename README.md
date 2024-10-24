@@ -5,6 +5,10 @@ This repo is a collection of projects that I have worked on showcasing analyses 
 
 If there are any problems viewing the html files, you can include the following text `https://html-preview.github.io/?url=` into the search bar followed by the html file you are interested in viewing.
 
+## Portfolio of Visualizations
+
+https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/student_suspensions/ca_student_suspension.html
+
 ## Students with Cognitive Disabilities & Suspension Counts
 
 https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/student_suspensions/ca_student_suspension.html
