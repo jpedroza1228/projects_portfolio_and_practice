@@ -1,0 +1,226 @@
+---
+title: "Visualizations for Latent Class Analysis Used in SPR Cup"
+format: html
+---
+
+```{r}
+# install.packages("metafor")
+#| warning: false
+#| message: false
+
+library(metafor)
+library(tidyverse)
+library(here)
+
+spr_d <- read_csv(here("projects_portfolio_and_practice/projects/spr_cup_lca/data", "sprcupdata.csv")) |> 
+  janitor::clean_names()
+```
+
+```{r}
+spr <- spr_d |> 
+  mutate(
+    class_num = case_when(
+    class == 1 ~ "Poor Health",
+    class == 2 ~ "Foot Problems", 
+    class == 3 ~ "Good Health",
+    class == 4 ~ "Balance Problems"
+    ),
+    ind = case_when(
+      ind == "depression" ~ "Depression",
+      ind == "walking" ~ "Walking",
+      ind == "adl" ~ "Activities of Daily Living",
+      ind == "fell" ~ "Fell",
+      ind == "numbfeet" ~ "Numb Feet",
+      ind == "tinglyfeet" ~ "Tingly Feet",
+      ind == "obesity" ~ "Obesity",
+      ind == "generalhealth" ~ "General Health",
+      ind == "arthritis" ~ "Arthritis",
+      ind == "osteoporosis" ~ "Osteoporosis",
+      ind == "vision" ~ "Vision"
+    )
+  )
+
+spr <- spr |>
+  mutate(
+    ind = as.factor(ind),
+    ind = fct_relevel(
+      ind,
+       c(
+        "Depression", 
+        "Walking",
+        "Activities of Daily Living",
+        "Fell",
+        "Numb Feet",
+        "Tingly Feet",
+        "Obesity",
+        "General Health", 
+        "Arthritis", 
+        "Osteoporosis", 
+        "Vision"
+        )
+    )
+  )
+
+
+spr |>
+  ggplot(
+    aes(
+      ind, 
+      prob
+      )
+    ) +
+  geom_col(
+    aes(
+      fill = as.factor(class)
+    ),
+      color = "white"
+    ) +
+  coord_flip() +
+  facet_wrap(
+    ~class_num
+    ) +
+  scale_y_continuous(
+    limits = c(
+      0,
+      1
+    ),
+    breaks = seq(0, 1, .1)
+    ) +
+  theme_classic() +
+  labs(
+    x = "Indicators",
+    y = "Probabilities"
+    ) +
+  # scale_fill_manual(values = c("#036936", "#FCB116", "#AF272F", "#DB1593")) +
+  viridis::scale_fill_viridis(
+    discrete = TRUE
+    ) +
+  theme(
+    legend.position = "None"
+  ) +
+  NULL
+```
+
+```{r model fit}
+fit <- data.frame("class_num" = c(1:10),
+                  "AIC" = c(2066815.656, 1824708.7, 1797171.68, 1778126.43, 1773890.7, 
+                            1770324.82, 1769167.77, 1767884.82, 1766993.04, 1766190.26),
+                  "BIC" = c(2066927.273, 1824942.08, 1797526.82, 1778603.34, 1774489.37, 
+                            1771045.25, 1770009.97, 1768848.79, 1768078.77, 1767397.75),
+                  "Adjusted BIC" = c(2066892.315,	1824868.99,	1797415.59,	1778453.97,	1774301.87,	
+                                     1770819.61, 1769746.19, 1768546.87, 1767738.72, 1767019.57))
+
+tidy_fit <- fit |> 
+  gather("fit_indice", "values", -1)
+
+
+tidy_fit <- tidy_fit |> 
+  mutate(class_cat = case_when(
+    class_num == 1 ~ "1 class",
+    class_num == 1 ~ "2 class",
+    class_num == 1 ~ "3 class",
+    class_num == 1 ~ "4 class",
+    class_num == 1 ~ "5 class",
+    class_num == 1 ~ "6 class",
+    class_num == 1 ~ "7 class",
+    class_num == 1 ~ "8 class",
+    class_num == 1 ~ "9 class",
+    class_num == 1 ~ "10 class"
+    )
+  )
+
+tidy_fit_4 <- tidy_fit |> 
+  filter(class_cat == "4 class")
+
+tidy_fit |> 
+  ggplot(aes(class_num, values)) +
+  geom_point(alpha = .3) +
+  geom_line(aes(color = fit_indice), linewidth = 1) +
+  geom_point(data = tidy_fit_4, color = "red", size = 2) +
+  facet_wrap(~fit_indice) +
+  scale_x_continuous(limits = c(1, 10), breaks = c(1, 4, 10), labels = c("1-class", "4-class","10-class")) +
+  labs(x = " ", 
+       y = "Values",
+       title = "Scree plot of fit indices for latent classes",
+       color = "Fit Indices") +
+  theme_classic() +
+  scale_color_manual(values = c("#036936", "#FCB116", "#AF272F")) +
+  theme(
+    axis.text.x = element_text(angle = -45),
+    legend.position = "none"
+    )
+```
+
+
+```{r}
+cohort11 <- data.frame("latent_class" = c("Good Health", "Foot Problems", "Balance Problems", "Poor Health"),
+                       "prob" = c(.12, .20, .41, .52))
+
+cohort11 |> 
+  ggplot(aes(latent_class, prob)) +
+  geom_col(aes(fill = latent_class), color = "white") +
+  scale_fill_manual(values = c("#104735", "#235E39", "#20883F", "#489D46")) +
+  labs(x = " ", 
+       y = "Probability",
+       title = "Probability of Having Fallen\nin Past Year at Two-Year Follow-up") +
+  theme_classic() +
+  theme(legend.position = "none",
+        title = element_text(size = 20),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))
+```
+
+
+```{r}
+cohorts <- read_csv(here("projects/spr_cup_lca/data", "probfalls.csv"))
+```
+
+```{r}
+foot_prob <- cohorts |> 
+  filter(classes == "foot_problems")
+
+bal_prob <- cohorts |> 
+  filter(classes == "balance_problems")
+
+good_health <- cohorts |> 
+  filter(classes == "good_health")
+
+poor_health <- cohorts |> 
+  filter(classes == "poor_health")
+
+cohorts$classes <- as.character(cohorts$classes)
+
+cohorts |> 
+  ggplot(aes(cohort, estimates)) +
+  geom_point(alpha = .3) +
+  scale_x_continuous(limits = c(11, 15), breaks = c(11, 13, 15), labels = c("Pre-ACA", 
+                                                                            "ACA", 
+                                                                            "Post-ACA")) +
+  geom_line(data = foot_prob, color = "black") +
+    geom_line(data = bal_prob, color = "black") +
+    geom_line(data = poor_health, color = "black") +
+    geom_line(data = good_health, color = "red", size = 1) +
+  theme_classic() +
+    labs(x = " ", 
+       y = "Probability",
+       caption = "ACA = Affordable Care Act",
+       title = "Probabilities of Problems Across Cohorts")  +
+  theme(legend.position = "none")
+
+cohorts |> 
+  filter(classes == "good_health") |> 
+  ggplot(aes(cohort, estimates)) +
+  geom_point(aes(color = cohort)) +
+  scale_x_continuous(limits = c(11, 15), breaks = c(11, 13, 15), labels = c("Pre-ACA", 
+                                                                            "ACA", 
+                                                                            "Post-ACA")) +
+  scale_y_continuous(limits = c(.10, .15), breaks = c(.10, .11, .12, .13, .14, .15)) +
+  geom_line(color = "#036936") +
+  theme_classic() +
+  labs(x = " ", 
+       y = "Probability",
+       caption = "ACA = Affordable Care Act") +
+  geom_text(label = "Good\nHealth", hjust = 0.5, vjust = 1.5, color = "#036936") +
+  theme(legend.position = "none")
+```
+

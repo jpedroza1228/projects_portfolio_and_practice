@@ -1,0 +1,633 @@
+---
+title: "Surviving the Titanic"
+format: html
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+import numpy as np
+import pandas as pd
+import plotnine as pn
+from pyhere import here
+from janitor import clean_names
+```
+
+```{python}
+train = pd.read_csv(here('projects/titanic/data', 'train.csv'))
+train = train.clean_names(case_type = 'snake')
+
+test = pd.read_csv(here('projects/titanic/data', 'test.csv'))
+test = test.clean_names(case_type = 'snake')
+```
+
+```{python}
+pclass_age = train[['pclass', 'age']].groupby(['pclass']).mean('age').reset_index()
+pclass_age = pd.DataFrame(pclass_age)
+
+pclass_age.dtypes
+
+(
+  pn.ggplot(pclass_age,pn.aes('factor(pclass)', 'age', fill = 'factor(pclass)'))
+  + pn.geom_col(alpha = .7, position = 'dodge2')
+  + pn.theme_light()
+  + pn.theme(legend_position = 'none')
+)
+```
+
+```{python}
+(
+
+  pn.ggplot(train[['pclass', 'cabin']].groupby(['pclass', 'cabin']).value_counts().reset_index(), pn.aes('factor(pclass)', 'factor(cabin)'))
+  + pn.geom_tile(pn.aes(fill = 'count'))
+  + pn.facet_wrap('~pclass', scales = 'free')
+  + pn.theme_light()
+)
+
+#put cabins into groups based on the pclass
+```
+
+```{python}
+class_cabin = train[['pclass', 'cabin']].groupby(['pclass', 'cabin']).value_counts().reset_index()
+
+class_cabin.loc[class_cabin['count'] > 1]
+
+class_cabin.loc[class_cabin['cabin'].str.contains('F E69')]
+```
+
+```{python}
+# lifeboat_prob
+sex_prop = train['sex'].value_counts().reset_index(drop = False)
+
+sex_total = sex_prop['count'].sum()
+
+sex_prop['percent'] = sex_prop['count']/sex_total*100
+
+print(sex_prop)
+```
+
+```{python}
+
+def prob_create(data):
+  if data['sex'] == 'female':
+    if data['pclass'] == 1:
+      return np.random.binomial(1, .7)
+    elif data['pclass'] == 2:
+      return np.random.binomial(1, .55)
+    else:
+      return np.random.binomial(1, .4)
+  elif data['sex'] == 'male':
+    if data['pclass'] == 1:
+      return np.random.binomial(1, .3)
+    elif data['pclass'] == 2:
+      return np.random.binomial(1, .2)
+    else:
+      return np.random.binomial(1, .1)
+
+```
+
+```{python}
+train['lifeboat'] = train.apply(prob_create, axis = 1)
+
+train.head()
+```
+
+```{python}
+class_ticket = train[['pclass', 'ticket']].groupby(['pclass', 'ticket']).value_counts().reset_index()
+
+class_ticket.sort_values('count', ascending = False)
+
+class_ticket.loc[class_ticket['pclass'] == 1]
+```
+
+```{python}
+(
+  pn.ggplot(train, pn.aes('pclass', 'fare'))
+  + pn.geom_jitter()
+  + pn.theme_light()
+)
+```
+
+```{python}
+variable = ['pclass', 'sex', 'sib_sp', 'parch', 'fare', 'embarked', 'lifeboat']
+
+for i in variable:
+  var_counts = train[i].value_counts()
+  print(var_counts)
+```
+
+```{python}
+(
+  pn.ggplot(train, pn.aes('sib_sp', 'parch'))
+  + pn.geom_jitter(pn.aes(color = 'factor(pclass)'))
+  + pn.facet_wrap('~pclass')
+  + pn.theme_light()
+)
+```
+
+```{python}
+train = train.drop(['ticket', 'cabin', 'name', 'passenger_id'], axis = 1)
+```
+
+```{python}
+(
+  pn.ggplot(train, pn.aes('sib_sp'))
+  + pn.geom_bar(fill = 'dodgerblue', color = 'black')
+  + pn.theme_light()
+)
+```
+
+```{python}
+(
+  pn.ggplot(train, pn.aes('parch'))
+  + pn.geom_bar(fill = 'dodgerblue', color = 'black')
+  + pn.theme_light()
+)
+```
+
+```{python}
+for i in train.columns:
+  na_counts = train[i].isna().value_counts()
+  print(na_counts)
+
+train['age'].isna().value_counts()
+```
+
+```{python}
+#from sklearn.experimental import enable_iterative_imputer
+#from sklearn.impute import IterativeImputer
+from sklearn.impute import SimpleImputer
+
+mod_var = ['age', 'sib_sp', 'parch', 'fare']
+
+train_mean = SimpleImputer(missing_values = np.nan, strategy = 'mean').set_output(transform = 'pandas')
+train_mean.fit(train[mod_var])
+train_imp = train_mean.transform(train[mod_var])
+
+train_cat_var = ['survived', 'pclass', 'lifeboat', 'sex', 'embarked']
+
+train_freq = SimpleImputer(missing_values = np.nan, strategy = 'most_frequent').set_output(transform = 'pandas')
+train_freq.fit(train[train_cat_var])
+train_imp_cat = train_freq.transform(train[train_cat_var])
+
+print(train_imp.columns)
+print(train_imp_cat.columns)
+
+train_imp = train_imp.join(train_imp_cat)
+```
+
+```{python}
+(
+  pn.ggplot(train_imp, pn.aes('age', 'fare'))
+  + pn.geom_point(pn.aes(color = 'factor(sex)'))
+  + pn.geom_smooth(method = 'lm', se = False)
+  + pn.facet_wrap('~lifeboat')
+  + pn.theme_light()
+)
+```
+
+```{python}
+(
+  pn.ggplot(train_imp, pn.aes('sib_sp', 'parch', color = 'age'))
+  + pn.geom_point(alpha = .5, position = pn.position_jitter())
+  + pn.facet_wrap('~survived')
+  + pn.theme_light()
+)
+```
+
+# Start Modeling
+
+```{python}
+target = train_imp['survived']
+features = train_imp[['pclass', 'age', 'sib_sp', 'parch', 'fare', 'sex', 'embarked', 'lifeboat']]
+
+features = pd.get_dummies(features, columns = ['pclass', 'sex', 'embarked'], prefix = '', prefix_sep = '')
+
+features = features.rename(columns = {'1': 'poor', '2': 'med', '3': 'rich'})
+```
+
+```{python}
+feat_good = features[['age', 'sib_sp', 'parch', 'fare', 'lifeboat']]
+feat_sub = features[[ 'poor', 'med', 'rich', 'female', 'male', 'C', 'Q', 'S']]
+
+for i in feat_sub.columns:
+    feat_sub[i] = feat_sub[i].apply(lambda x: 1 if x else 0)
+print(feat_sub)
+```
+
+```{python}
+features = feat_good.join(feat_sub)
+
+# features = features.drop(['poor', 'female', 'C'], axis = 1)
+
+features.head()
+
+target = target.astype(str).astype(int)
+
+features['lifeboat'] = features['lifeboat'].astype(str).astype(int)
+```
+
+```{python}
+target_classes = target.value_counts()
+target_classes_wt = target_classes.max()/target_classes.min()
+target_classes_wt = np.round(target_classes_wt, 2)
+
+print(target_classes_wt)
+```
+
+```{python}
+from sklearn.ensemble import RandomForestClassifier as rfc
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_auc_score, mean_absolute_error, roc_curve, make_scorer, log_loss
+from sklearn.model_selection import GridSearchCV
+
+x_train, x_test, y_train, y_test = train_test_split(features, target, test_size = .25, stratify = target, random_state = 12345)
+```
+
+```{python}
+rf_model = rfc(n_estimators = 1000, criterion = 'log_loss', max_depth = 2, min_samples_split = 2, bootstrap = False, random_state = 12345, verbose = 1, n_jobs = 100) #class_weight = {0: target_classes_wt, 1: 1}, 
+```
+
+```{python}
+rf_mod = rf_model.fit(x_train, y_train)
+```
+
+```{python}
+pred = rf_model.predict(x_test)
+pred = pd.Series(pred)
+```
+
+```{python}
+from sklearn.inspection import permutation_importance
+
+single_important = permutation_importance(rf_mod, x_train, y_train, random_state = 12345)
+```
+
+```{python}
+single_mod_import = pd.Series(rf_mod.feature_importances_, index = features.columns).reset_index().rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+
+(
+  pn.ggplot(single_mod_import, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(fill = 'dodgerblue', color = 'black')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
+
+```{python}
+single_important_series = pd.Series(single_important.importances_mean, index = features.columns)
+single_important_df = single_important_series.reset_index()
+single_important_df = single_important_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+
+print(single_important_df)
+
+(
+  pn.ggplot(single_important_df, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(fill = 'dodgerblue', color = 'black')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
+
+```{python}
+print('Mean Absolute Error is', mean_absolute_error(y_test, pred))
+
+print('Accuracy is', accuracy_score(y_test, pred))
+
+print('ROC AUC score is', roc_auc_score(y_test, pred))
+
+print('Log loss is', log_loss(y_test, pred))
+```
+
+```{python}
+from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.model_selection import GridSearchCV
+
+folds = KFold(5)
+
+rf_grid_model = rfc(criterion = 'log_loss', min_samples_split = 2, bootstrap = True, random_state = 12345, verbose = 1, n_jobs = 100) 
+
+params = {'n_estimators': [100, 500, 1000, 2000, 5000], 'min_samples_split': [2, 3, 4, 5], 'max_depth': [3, 5, 7]}
+
+grid = GridSearchCV(rf_grid_model, params, cv = folds, verbose = 1)
+
+grid.fit(x_train, y_train)
+```
+
+```{python}
+print(grid.best_score_)
+
+print(grid.best_params_)
+
+print(grid.best_estimator_)
+```
+
+```{python}
+best_rf = rfc(criterion='log_loss', max_depth=7, min_samples_split=5,
+                       n_estimators=5000, n_jobs=100, random_state=12345,
+                       verbose=1)
+
+best_rf.fit(x_train, y_train)
+```
+
+```{python}
+best_pred = best_rf.predict(x_test)
+best_pred = pd.Series(best_pred)
+```
+
+```{python}
+best_important = permutation_importance(best_rf, x_train, y_train, random_state = 12345)
+```
+
+```{python}
+best_single_mod_import = pd.Series(best_rf.feature_importances_, index = features.columns).reset_index().rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+
+(
+  pn.ggplot(best_single_mod_import, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(fill = 'dodgerblue', color = 'black')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
+
+```{python}
+best_important_series = pd.Series(best_important.importances_mean, index = features.columns)
+best_important_df = best_important_series.reset_index()
+best_important_df = best_important_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')
+
+print(best_important_df)
+
+(
+  pn.ggplot(best_important_df, pn.aes('factor(columns)', 'scores'))
+  + pn.geom_col(fill = 'dodgerblue', color = 'black')
+  + pn.coord_flip()
+  + pn.theme_light()
+)
+```
+
+```{python}
+print('Mean Absolute Error is', mean_absolute_error(y_test, best_pred))
+
+print('Accuracy is', accuracy_score(y_test, best_pred))
+
+print('ROC AUC score is', roc_auc_score(y_test, best_pred))
+
+print('Log loss is', log_loss(y_test, best_pred))
+```
+
+# Neural Network
+
+```{python}
+import tensorflow as tf
+from tensorflow import keras
+# import keras_tuner as kt
+
+target_nn_train = np.array(y_train).reshape(-1, 1)
+target_nn_test = np.array(y_test).reshape(-1, 1)
+features_nn_train = np.array(x_train)
+features_nn_test = np.array(x_test)
+
+nn_metrics = [ \
+  keras.metrics.BinaryAccuracy(name = 'accuracy'),
+  keras.metrics.AUC(name = 'auc')
+]
+```
+
+```{python}
+def build_and_compile_model(layer_num):
+  model = tf.keras.models.Sequential([
+    tf.keras.layers.Dense(units = layer_num, activation = 'relu'),
+    tf.keras.layers.Dense(units = 1, activation = None)
+  ])
+  
+  model.compile(
+    loss='mean_absolute_error',
+    optimizer=tf.keras.optimizers.AdamW(0.001),
+    metrics = nn_metrics
+    )
+  return model
+
+nn_model = build_and_compile_model(7)
+
+nn_model.fit(
+  features_nn_train,
+  target_nn_train,
+  validation_split = .2,
+  verbose = 3,
+  epochs = 1000
+)
+```
+
+```{python}
+nn_predict = nn_model.predict(features_nn_test)
+nn_results = nn_model.evaluate(features_nn_test, target_nn_test, verbose = 3)
+#nn_results shows the loss metric (MAE), accuracy, then roc_auc
+```
+
+```{python}
+print('The Mean Absolute Error is ', nn_results[0], '.', '\n', 'While the Accuracy is ', nn_results[1], '.', '\n', 'The ROC AUC Score is ', nn_results[2], '.')
+
+print(log_loss(target_nn_test, nn_predict))
+```
+
+```{python}
+# pred_bi = np.select( \
+#   [ \
+#     pred.between(0, .5, inclusive = 'both'),
+#     pred.between(.5, 1, inclusive = 'right')
+#   ], \
+#   [ \
+#     0, 1
+#   ]
+# )
+
+#XGBoost Model
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+hist_grad_model = HistGradientBoostingRegressor(
+  random_state = 12345, \
+  verbose = 3,
+  learning_rate = .001,
+  max_iter = 1000
+  )
+
+grad_param_grid = {'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10]}
+
+grad_grid = GridSearchCV( \
+  hist_grad_model, \
+  grad_param_grid, \
+  refit = True,
+  verbose = 3
+)
+
+grad_grid.fit(x_train, y_train)
+
+print(grad_grid.cv_results_)
+print(grad_grid.best_score_)
+print(grad_grid.best_params_)
+print(grad_grid.best_estimator_)
+
+from sklearn.metrics import mean_squared_error, roc_curve
+
+grad_pred = grad_grid.predict(x_train)
+grad_pred = pd.Series(grad_pred)
+
+mae = mean_absolute_error(y_train, grad_pred)
+
+grad_pred_bi = np.select( \
+  [ \
+    grad_pred.between(0, .5, inclusive = 'both'),
+    grad_pred.between(.5, 1, inclusive = 'right')
+  ], \
+  [ \
+    0, 1
+  ]
+)
+
+print('SVM mean absolute error was', mae_svm, '.', 'Compared to the histogram gradient boosting algoirhtm, which had an MAE of', mae)
+
+print('Accuracy for the SVM was', accuracy_score(y_train, pred_bi), 'compared to the Gradient Boost\'s Accuracy of', accuracy_score(y_train, grad_pred_bi))
+
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+
+svm_confuse = confusion_matrix(y_train, pred_bi)
+grad_confuse = confusion_matrix(y_train, grad_pred_bi)
+
+svm_disp = ConfusionMatrixDisplay(confusion_matrix = svm_confuse, display_labels = grid.classes_)
+# does not work because of the classes
+# grad_disp = ConfusionMatrixDisplay(confusion_matrix = grad_confuse, display_labels = grad_grid.classes_)
+
+import matplotlib.pyplot as plt
+svm_disp.plot()
+plt.show()
+
+grad_disp.plot()
+plt.show()
+
+print('ROC AUC was', roc_auc_score(y_train, pred_bi), 'for SVM and ', roc_auc_score(y_train, grad_pred), 'for Gradient Boost')
+```
+
+# Testing
+
+```{python}
+for i in test.columns:
+  print(test[i].isna().value_counts())
+
+test_var = ['fare', 'parch', 'sib_sp', 'age']
+
+test_mean = SimpleImputer(missing_values = np.nan, strategy = 'mean').set_output(transform = 'pandas')
+test_mean.fit(test[test_var])
+test_imp = test_mean.transform(test[test_var])
+
+test_imp['fare'].isna().value_counts()
+test_imp['age'].isna().value_counts()
+
+test_cat_var = ['passenger_id', 'pclass', 'name', 'sex', 'ticket', 'embarked']
+
+test_freq = SimpleImputer(missing_values = np.nan, strategy = 'most_frequent').set_output(transform = 'pandas')
+test_freq.fit(test[test_cat_var])
+test_imp_cat = test_freq.transform(test[test_cat_var])
+
+
+test_imp.join(test_imp_cat).shape
+test_imp = test_imp.join(test_imp_cat)
+
+train_imp['fare_cat'] = pd.qcut(train_imp['fare'], 5, labels = ['1', '2', '3', '4', '5'])
+
+
+test_imp['age_group'] = np.select( \
+  [ \
+    test_imp['age'].between(0, 13, inclusive = 'left'),
+    test_imp['age'].between(13, 20, inclusive = 'left'),
+    test_imp['age'].between(20, 30, inclusive = 'left'),
+    test_imp['age'].between(30, 40, inclusive = 'left'),
+    test_imp['age'].between(40, 50, inclusive = 'left'),
+    test_imp['age'].between(50, 60, inclusive = 'left'),
+    test_imp['age'].between(60, 70, inclusive = 'left'),
+    test_imp['age'].between(70, 100, inclusive = 'both')
+  ], \
+  [ \
+    'age1', 'age2', 'age3', 'age4', 'age5', 'age6', 'age7', 'age8' \
+  ] \
+)
+
+# target_test = test_imp[]
+features_test = test_imp[['pclass', 'age_group', 'sib_sp', 'parch', 'fare', 'passenger_id', 'name', 'sex', 'ticket', 'embarked']]
+
+features_test = pd.get_dummies(features_test, columns = ['pclass', 'sex', 'age_group', 'embarked'], prefix = '', prefix_sep = '')
+
+features_test = features_test.rename(columns = {'1': 'pclass1', '2': 'pclass2', '3': 'pclass3'})
+
+# features_test = features_test.drop(['name', 'passenger_id'], axis = 1)
+# features_test.head()
+
+feat_sub_test = features_test.iloc[:, np.r_[6:22]] # similar to the following code features.loc[features.index, features.columns[np.r_[7:162]]]
+feat_good_test = features_test.iloc[:, np.r_[0:5]]
+
+
+for i in feat_sub_test.columns:
+    feat_sub_test[i] = feat_sub_test[i].apnly(lambda x: 1 if x else 0)
+print(feat_sub_test)
+
+
+features_test = feat_sub_test.join(feat_good_test)
+
+train_imp['embarked'].value_counts()
+
+features_test['female_age2'] = features_test['female'] * features_test['age2']
+features_test['female_age3'] = features_test['female'] * features_test['age3']
+features_test['female_age4'] = features_test['female'] * features_test['age4']
+features_test['female_age5'] = features_test['female'] * features_test['age5']
+features_test['female_age6'] = features_test['female'] * features_test['age6']
+features_test['female_age7'] = features_test['female'] * features_test['age7']
+features_test['female_age8'] = features_test['female'] * features_test['age8']
+
+features_test = features_test.drop(['male', 'pclass1', 'age1', 'S'], axis = 1)
+features_test = features_test.round(3)
+
+# target_classes = target.value_counts()
+# target_classes_wt = target_classes.max()/target_classes.min()
+# target_classes_wt = np.round(target_classes_wt, 2)
+
+sub = pd.read_csv(here('kaggle/titanic/gender_submission.csv'))
+sub = sub.clean_names(case_type = 'snake')
+
+features_test = features_test.merge(sub, on = 'passenger_id') # merge is similar to join in R
+
+target_test = features_test['survived']
+mod_feat_test = features_test.drop(['name'], axis = 1)
+
+
+nn_test = build_and_compile_model()
+
+nn_test.fit(
+  mod_feat_test,
+  target_test,
+  validation_split = 0,
+  verbose = 3,
+  epochs = 100
+)
+
+nn_pred_test = nn_test.predict(mod_feat_test)
+nn_results_test = nn_test.evaluate(mod_feat_test, target_test, verbose = 3)
+
+nn_pred_test = nn_pred_test.flatten() # same as this code: nn_pred_test.reshape(-1)
+nn_pred_test = pd.Series(nn_pred_test)
+
+prob_test_bi = np.select( \
+  [ \
+    nn_pred_test.between(0, .5, inclusive = 'both'),
+    nn_pred_test.between(.5, 1, inclusive = 'right')
+  ], \
+  [ \
+    0, 1
+  ]
+)
+
+print(mean_absolute_error(target_test, prob_test_bi))
+print(accuracy_score(target_test, prob_test_bi))
+print(roc_auc_score(target_test, prob_test_bi))
+```

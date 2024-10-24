@@ -1,0 +1,13 @@
+---
+title: "Visualization 3"
+author: Jonathan Andrew Pedroza, PhD
+format: pdf
+---
+
+This visualization is for a project I am working on that examines the association between students with disabilities that are in general education classrooms 80% of the school day and the rates of suspensions for defiance. I have worked on everything for this project. I researched the project idea, have been reading the literature on the topic, gathered the data from California Educational resources, joined and manipulated the data combining data from different files on The California Department of Education website, conducted the analyses, and am currently writing the manuscript for publication. 
+
+The purpose of this project was to compare disability types and see if any of these student groups are more likely to be suspended for defiance in comparison to others. I specifically compared students with specific learning disabilities to other disabilities that are all in general education classrooms 80% or more of the school day and their rates of being suspended for defiance. I conducted two Bayesian multi-level models to show the importance of including relevant covariates (variables that need to be accounted for) in showing the difference between California counties' suspension rates. The visualization shows that when not including additional important variables in the model, Sacramento is suspending a significantly higher rate of students with disabilities compared to other counties. However, when including relevant additional variables, like the amount of students in the districts within each county and the number of total suspensions in the districts within each county, we can see that Sacramento still suspends many more students with disabilities in comparison to other counties but the difference is not as large. With the more accurate model, we can now see that there must be a focus on the counties in and around Sacramento because they all appear to be suspending students with disabilities in greater numbers than other California counties. Taking into account the number of students in the districts within each county removes the argument that it is because of the size of the districts. We can see that counties with larger student enrollment do not suspend students with disabilities as much as that region in Northern California.
+
+The code and and interactive plots (intended for html files) can be found [here](), along with the findings for the models in html-rendered tables.
+
+![](C:/Users/Jonathan/Documents/github_projects/projects_portfolio_and_practice/projects/visualization_portfolio/Suspension Rates California Counties.png)

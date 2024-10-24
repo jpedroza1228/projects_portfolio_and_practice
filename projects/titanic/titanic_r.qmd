@@ -1,7 +1,9 @@
 ---
-title: "Untitled"
+title: "Surviving the Titanic in R"
 format: html
 ---
+
+```{r}
 
 library(tidyverse)
 library(glmnet)
@@ -261,5 +263,7 @@ test_pred <- test_pred %>%
   rename(PassengerId = passenger_id,
          Survived = survived)
 
-write.csv(test_pred,
-          'submission.csv')
+# write.csv(test_pred,
+#          'submission.csv')
+```
+

@@ -1,0 +1,13 @@
+classes,cohort,estimates,se
+balance_problems,11,0.41,0.004
+foot_problems,11,0.2,0.005
+poor_health,11,0.53,0.007
+good_health,11,0.13,0.002
+balance_problems,13,0.4,0.004
+foot_problems,13,0.21,0.005
+poor_health,13,0.52,0.006
+good_health,13,0.12,0.001
+balance_problems,15,0.41,0.004
+foot_problems,15,0.2,0.005
+poor_health,15,0.52,0.006
+good_health,15,0.12,0.002

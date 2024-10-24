@@ -1,0 +1,13 @@
+---
+title: "Visualization 1"
+author: Jonathan Andrew Pedroza, PhD
+format: pdf
+---
+
+This visualization is an extension of a plot that I created for a presentation I delivered over Twitter to public-health practitioners and researchers. The presentation can be found [here](https://x.com/PaSectionAPHA/status/1309192269447143425). I was solely responsible for every component of this project. I gathered data from the sources that collected the data, I manipulated and joined multiple tables of data to have multiple years and map coordinates, I conducted the analyses for the presentation and similar projects, and I was fully responsible for creating the visualizations and the narratives for the implications of the project's findings. 
+
+The purpose of the presentation was to investigate whether there was leisure-time physical activity (LTPA) changes during this 5 year timeframe. The model conducted (a multi-level model) accounts for the nested nature of the data with time being accounted for within each county. The findings indicate that every year, from 2016 to 2020 (prior to the pandemic), the average percentage of reported LTPA for California counties would drop by approximately 1% (*b* = -0.85). Further analysis of the drop in LTPA revealed that 71% of the variation in LTPA differences during this time was due to differences between counties. Therefore, this visualization shows that while the average amount of LTPA drops by 1% in all California counties, there are some counties that had LTPA significantly drop during this time. The focus on Lassen County in northern California is due to the drastic reduction in LTPA by 2020. The decision to use these colors rather than address potential colorblind issues when viewing this plot was made because the colors assist with the storytelling. The choice of colors were due to the understanding that green is often viewed as good while red shows a deficit. This presentation visualization then led to additional analyses that examined if access to recreational resources (e.g., fitness centers, parks, beaches, etc.) was responsible for the reduction in LTPA in these counties.
+
+The code and and interactive plots (intended for html files) can be found [here](), along with the findings for the models in html-rendered tables.
+
+![](C:/Users/Jonathan/Documents/github_projects/projects_portfolio_and_practice/projects/visualization_portfolio/California County LTPA map.png)
