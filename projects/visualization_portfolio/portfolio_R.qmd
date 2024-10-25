@@ -7,6 +7,7 @@ execute:
 format: 
   html:
     code-fold: true
+    code-link: false
 ---
 
 ```{r}
@@ -255,9 +256,9 @@ ca_ltpa
 
 # Visualization 1
 
-This visualization is an extension of a plot that I created for a presentation I delivered over Twitter to public-health practitioners and researchers. The presentation can be found [here](https://x.com/PaSectionAPHA/status/1309192269447143425). I was solely responsible for every component of this project. I gathered data from the sources that collected the data, I manipulated and joined multiple tables of data to have multiple years and map coordinates, I conducted the analyses for the presentation and similar projects, and I was fully responsible for creating the visualizations and the narratives for the implications of the project's findings. 
+This visualization is an extension of a plot that I created for a presentation I delivered over Twitter to public-health practitioners and researchers. The presentation can be found [here](https://x.com/PaSectionAPHA/status/1309192269447143425). I was solely responsible for every component of the work in this project. I found the sources that collected the data, I manipulated and joined multiple tables of data to have multiple years and map coordinates, I conducted the analyses for the presentation and similar projects, and I was fully responsible for creating the visualizations and the narratives for the implications of the project's findings. 
 
-The purpose of the presentation was to investigate whether there was leisure-time physical activity (LTPA) changes during this 5 year timeframe. The model conducted (a multi-level model) accounts for the nested nature of the data with time being accounted for within each county. The findings indicate that every year, from 2016 to 2020 (prior to the pandemic), the average percentage of reported LTPA for California counties would drop by approximately 1% (*b* = -0.85). Further analysis of the drop in LTPA revealed that 71% of the variation in LTPA differences during this time was due to differences between counties. Therefore, this visualization shows that while the average amount of LTPA drops by 1% in all California counties, there are some counties that had LTPA significantly drop during this time. The focus on Lassen County in northern California is due to the drastic reduction in LTPA by 2020. The decision to use these colors rather than address potential colorblind issues when viewing this plot was made because the colors assist with the storytelling. The choice of colors were due to the understanding that green is often viewed as good while red shows a deficit. This presentation visualization then led to additional analyses that examined if access to recreational resources (e.g., fitness centers, parks, beaches, etc.) was responsible for the reduction in LTPA in these counties.
+The purpose of the presentation was to investigate whether there was leisure-time physical activity (LTPA) changes during this 5 year timeframe. The model conducted (multi-level model) accounts for the nested natural of the data with time being accounted for within each county. The findings indicate that every year, from 2016 to 2020 (prior to the pandemic), the average percentage of reported LTPA for California counties would drop by approximately 1% (*b* = -0.85). Further analysis of the drop in LTPA revealed that `r round(ca_variation, 2) *100`% of the variation in LTPA differences during this time was due to differences between counties. Therefore, this visualization shows that while the average amount of LTPA drops by 1% in all California counties, there are some counties that had LTPA significantly drop during this time. The focus on Lassen County in northern California is due to the drastic reduction in LTPA by 2020. The decision to use these colors rather than address potential colorblind issues when viewing this plot was made because the colors assist with the storytelling. The choice of colors were due to the understanding that green is often viewed as good while red shows a deficit. This presentation visualization then led to additional analyses that examined if access to recreational resources (e.g., fitness centers, parks, beaches, etc.) was responsible for the reduction in LTPA in these counties.
 
 ```{r}
 ggplotly(ca_ltpa)
@@ -292,9 +293,6 @@ ca_visual |>
 ```
 
 ```{r}
-#| echo: false
-#| eval: false
-
 ca_visual |> 
   distinct(
     no_name_county,
@@ -412,7 +410,7 @@ dept_df |>
       label = college
     ),
     y = 0.02,
-    size = 4,
+    # size = 4,
     color = "black"
   ) +
   geom_text(
@@ -420,7 +418,7 @@ dept_df |>
       label = round(avg_ge_fte, 2)
     ),
     nudge_y = -.01,
-    size = 4,
+    # size = 4,
     color = "black"
   ) +
   coord_flip() +
@@ -456,7 +454,7 @@ dept_df |>
   # ) + 
   theme_light() + 
   theme(
-    legend.position = "none"
+    legend.position = "none"  
     # plot.title = element_text(
     #   color = "black",
     #   size = 20
@@ -478,9 +476,9 @@ dept_df |>
 
 # Visualization 2
 
-This visualization was for a dashboard (see [here](https://jpedroza1228.github.io/gradschool_dashboard/)) in collaboration with the University of Oregon's Division of Graduate Studies. I met with the Vice Provost to discuss what was wanted for the dashboard. It was finally decided that a dashboard with visualizations and models examining the linear relationship between graduate students as teaching instructors and a metric of undergraduate student success. My role in this project was to clean and manipulate data for the visualizations in the dashboard. I also created synthetic data of the original data and summarized the original data to remove any chance of identifying individual graduate students. Summarized data files can be found [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/pushable_data) while the synthethic data can be seen [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/synthetic_data). My role also included creating the entire dashboard and conducting the growth model analyses, and interpreting and writing a summary for the Vice Provost in a manner that would be understandable to a less technical audience on the implications of having graduate students teaching rather than adjunct faculty or tenure-track faculty.  
+This visualization was for a dashboard (see [here](https://jpedroza1228.github.io/gradschool_dashboard/)) in collaboration with the University of Oregon's Division of Graduate Studies. I met with the Vice Provost to discuss what was wanted for the dashboard. It was finally decided that a dashboard with visualizations and models examining the linear relationship between graduate students as teaching instructors and a metric of undergraduate student success. My role in this project was to clean and manipulate data for the visualizations in the dashboard. I also created synthetic data of the original data and summarized the original data to remove any chance of identifying individual graduate students. Summarized data files can be found [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/pushable_data) while the synthethic data can be seen [here](https://github.com/jpedroza1228/gradschool_dashboard/tree/main/synthetic_data). My role also included creating the entire dashboard conducting the growth model analyses, and interpreting and writing a summary for the Vice Provost in a manner that would be understandable to a less technical audience on the implications of having graduate students teaching rather than adjunct faculty or tenure-track faculty.  
 
-The visualization presented here shows the average amount of full-time equivalency (FTE), or amount of time that graduate students could work, across departments at the university. Graduate employment ranges from those working approximately 10 hours a week to those that have a full-time graduate employment position at 20 hours a week. The FTE around .2 is usually from faculty hiring a graduate student for assistance with research that cannot fully hire a graduate student and pay for insurance and other benefits that is required when hiring at a .49 FTE. Some colleges cannot fully support the GEs in their departments, while others are able to fully support their graduate employees with grant-funded opportunities. That is why this visualization shows that the College of Arts & Sciences, a large college at the university, has several departments that can access grant funding, with averages being brought down in some departments due to also hiring part-time graduate employees. Additional graduate employment outside of each college and/or department also requires skills that are more likely to be present in colleges outside of the College of Design and the School of Music & Dance. For instance, graduate employment through the health center and the Division of Graduate Studies want employees with training in research, writing, and working with underserved populations; something that is common in many of the departments at higher average FTE ratings.
+The visualization presented here shows the average amount of full-time equivalency (FTE), or amount of time that graduate students could work, across departments at the university. Graduate employment ranges from those working approximately 10 hours a week to those that have a full-time graduate employment position at 20 hours a week. The FTE around .2 are usually from faculty hiring a graduate student with research assistance that cannot fully hire a graduate student and pay for insurance and other benefits that is required when hiring at a .49 FTE. Some colleges cannot fully support the GEs in their departments, while others are able to fully support their graduate employees with grant-funded opportunities. That is why this visualization shows that the College of Arts & Sciences, a large college at the university, has several departments that can access grant funding, with averages being brought down in some departments due to also hiring part-time graduate employees. Additional graduate employment outside of each college and/or department also requires skills that are more likely to be present in colleges outside of the College of Design and the School of Music & Dance. For instance, graduate employment through the health center and the Division of Graduate Studies want employees with training in research, writing, and working with underserved populations; something that is common in many of the departments at higher average FTE ratings.
 
 # Suspension Rates for Student with Significant Cognitive Disabilities
 
@@ -502,7 +500,7 @@ fit <- read_rds("C:/Users/Jonathan/Documents/github_projects/projects_portfolio_
 
 ```{r}
 #| eval: true
-#| echo: true
+#| echo: false
 
 tidy(fit_no) |>
   mutate(
@@ -563,7 +561,7 @@ none
 
 ```{r}
 #| eval: true
-#| echo: true
+#| echo: false
 
 tidy(fit) |>
   mutate(
@@ -649,6 +647,6 @@ patch + plot_annotation(
 
 # Visualization 3
 
-This visualization is for a project I am working on that examines the association between students with disabilities that are in general education classrooms 80% of the school day and the rates of suspensions for defiance. I have worked on everything for this project. I researched the project idea, have been reading the literature on the topic, gathered the data from California Educational resources, joined and manipulated the data combining data from different files on The California Department of Education website, conducted the analyses, and am currently writing the manuscript for publication. 
+This visualization is for a project I am working on that examines the association between students with disabilities that are in general education classrooms 80% of the school day and the rates of suspensions for defiance. For this project, I have solely worked on everything for this project. I researched the project idea, have been reading the literature on the topic, gathered the data from California Educational resources, joined and manipulated the data combining data from different files on The California Department of Education website, conducted the analyses, and am currently writing the manuscript for publication. 
 
-The purpose of this project was to compare disability types and see if any of these student groups are more likely to be suspended for defiance in comparison to others. I specifically compared students with specific learning disabilities to other disabilities that are all in general education classrooms 80% or more of the school day and their rates of being suspended for defiance. I conducted two Bayesian multi-level models to show the importance of including relevant covariates (variables that need to be accounted for) in showing the difference between California counties' suspension rates. The visualization shows that when not including additional important variables in the model, Sacramento is suspending a significantly higher rate of students with disabilities compared to other counties. However, when including relevant additional variables, like the amount of students in the districts within each county and the number of total suspensions in the districts within each county, we can see that Sacramento still suspends many more students with disabilities in comparison to other counties but the difference is not as large. With the more accurate model, we can now see that there must be a focus on the counties in and around Sacramento because they all appear to be suspending students with disabilities in greater numbers than other California counties. Taking into account the number of students in the districts within each county removes the argument that it is because of the size of the districts. We can see that counties with larger student enrollment do not suspend students with disabilities as much as that region in Northern California.
+The purpose of this project was to compare disability types and see if any of these student groups are more likely to be suspended for defiance in comparison to others. I specifically compared students with specific learning disabilities to other disabilities that are all in general education classrooms 80% or more of the school day and their rates of being suspended for defiance. I conducted two Bayesian multi-level models to show the importance of including relevant covariates (variables that need to be accounted for) in showing the difference between California counties' suspension rates. The visualization shows that when not including additional important variables in the model, Sacramento is suspending a significant amount more of students with disabilities compared to other counties. However, when including relevant additional variables, like the size of the districts within each county and the number of total suspensions in the districts within each county, we can see that Sacramento still suspends many more students with disabilities in comparison to other counties but the difference is not as significant. With the more accurate model, we can now see that there must be a focus on the counties in and around Sacramento because they all appear to be suspending students with disabilities in greater numbers than other California counties. Taking into account the size of the districts within each county removes the argument that it is because of the size of the districts. We can see that counties with larger student enrollment do not suspend students with disabilities as much as that area in Northern California.
