@@ -7,15 +7,7 @@ If there are any problems viewing the html files, you can include the following 
 
 ## Portfolio of Visualizations
 
-https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/visualization_portfolio/portfolio_R.html
-
-**California LTPA Map**
-
-https://html-preview.github.io/?url=https://raw.githubusercontent.com/jpedroza1228/projects_portfolio_and_practice/refs/heads/main/projects/visualization_portfolio/ca_ltpa_plotly.html
-
-**California County LTPA Over Time**
-
-https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/visualization_portfolio/ca_line.html
+https://jpedroza1228.github.io/projects_portfolio_and_practice/
 
 ## Society of Prevention Research's 2019 Cup Latent Class Analysis Visualizations
 
