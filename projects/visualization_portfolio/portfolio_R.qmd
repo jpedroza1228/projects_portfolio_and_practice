@@ -266,10 +266,14 @@ The purpose of the presentation was to investigate whether there was leisure-tim
 
 ca_ltpa_plotly <- ggplotly(ca_ltpa)
 
-htmlwidgets::saveWidget(as_widget(ca_ltpa_plotly), "ca_ltpa_plotly.html")
+ca_ltpa_plotly
+
+# htmlwidgets::saveWidget(as_widget(ca_ltpa_plotly), "ca_ltpa_plotly.html")
 ```
 
-*Note*: Double clicking on a particular county in the legend will show that county's LTPA over time. If comparisons between counties are desired, a single click will show any other county of interest. Double clicking when viewing one county will revert back to the line plots of all the California counties.
+```{r}
+browseURL(here::here("projects/visualization_portfolio", "ca_ltpa_plotly.html"))
+```
 
 ```{r}
 #| eval: false
@@ -299,8 +303,16 @@ ca_line <- ca_visual |>
     yaxis = list(title = "Leisure-time Physical Activity")
     )
 
-htmlwidgets::saveWidget(as_widget(ca_line), "ca_line.html")
+ca_line
+
+# htmlwidgets::saveWidget(as_widget(ca_line), "ca_line.html")
 ```
+
+```{r}
+browseURL(here::here("projects/visualization_portfolio", "ca_line.html"))
+```
+
+*Note*: Double clicking on a particular county in the legend will show that county's LTPA over time. If comparisons between counties are desired, a single click will show any other county of interest. Double clicking when viewing one county will revert back to the line plots of all the California counties.
 
 ```{r}
 ca_visual |> 
