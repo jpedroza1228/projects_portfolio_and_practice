@@ -261,13 +261,21 @@ This visualization is an extension of a plot that I created for a presentation I
 The purpose of the presentation was to investigate whether there was leisure-time physical activity (LTPA) changes during this 5 year timeframe. The model conducted (multi-level model) accounts for the nested natural of the data with time being accounted for within each county. The findings indicate that every year, from 2016 to 2020 (prior to the pandemic), the average percentage of reported LTPA for California counties would drop by approximately 1% (*b* = -0.85). Further analysis of the drop in LTPA revealed that `r round(ca_variation, 2) *100`% of the variation in LTPA differences during this time was due to differences between counties. Therefore, this visualization shows that while the average amount of LTPA drops by 1% in all California counties, there are some counties that had LTPA significantly drop during this time. The focus on Lassen County in northern California is due to the drastic reduction in LTPA by 2020. The decision to use these colors rather than address potential colorblind issues when viewing this plot was made because the colors assist with the storytelling. The choice of colors were due to the understanding that green is often viewed as good while red shows a deficit. This presentation visualization then led to additional analyses that examined if access to recreational resources (e.g., fitness centers, parks, beaches, etc.) was responsible for the reduction in LTPA in these counties.
 
 ```{r}
-ggplotly(ca_ltpa)
+#| eval: false
+#| echo: true
+
+ca_ltpa_plotly <- ggplotly(ca_ltpa)
+
+htmlwidgets::saveWidget(as_widget(ca_ltpa_plotly), "ca_ltpa_plotly.html")
 ```
 
 *Note*: Double clicking on a particular county in the legend will show that county's LTPA over time. If comparisons between counties are desired, a single click will show any other county of interest. Double clicking when viewing one county will revert back to the line plots of all the California counties.
 
 ```{r}
-ca_visual |>
+#| eval: false
+#| echo: true
+
+ca_line <- ca_visual |>
   mutate(
     named_county = str_replace_all(no_name_county, "_", " "),
     named_county = str_to_title(named_county),
@@ -290,6 +298,8 @@ ca_visual |>
     xaxis = list(title = " "),
     yaxis = list(title = "Leisure-time Physical Activity")
     )
+
+htmlwidgets::saveWidget(as_widget(ca_line), "ca_line.html")
 ```
 
 ```{r}
