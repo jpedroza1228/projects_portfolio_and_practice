@@ -11,7 +11,7 @@ https://html-preview.github.io/?url=https://github.com/jpedroza1228/projects_por
 
 **California LTPA Map**
 
-https://html-preview.github.io/?url=[https://github.com/jpedroza1228/projects_portfolio_and_practice/blob/main/projects/visualization_portfolio/ca_ltpa_plotly.html](https://raw.githubusercontent.com/jpedroza1228/projects_portfolio_and_practice/refs/heads/main/projects/visualization_portfolio/ca_ltpa_plotly.html)
+https://html-preview.github.io/?url=https://raw.githubusercontent.com/jpedroza1228/projects_portfolio_and_practice/refs/heads/main/projects/visualization_portfolio/ca_ltpa_plotly.html
 
 **California County LTPA Over Time**
 
