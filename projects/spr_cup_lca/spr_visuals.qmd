@@ -1,29 +1,47 @@
 ---
 title: "Visualizations for Latent Class Analysis Used in SPR Cup"
-format: html
+format: 
+  html:
+    code-fold: true
 ---
 
 ```{r}
-# install.packages("metafor")
 #| warning: false
 #| message: false
+
+# install.packages("metafor")
 
 library(metafor)
 library(tidyverse)
 library(here)
 
-spr_d <- read_csv(here("projects_portfolio_and_practice/projects/spr_cup_lca/data", "sprcupdata.csv")) |> 
+spr_d <- read_csv(here("projects/spr_cup_lca/data", "sprcupdata.csv")) |> 
   janitor::clean_names()
 ```
+
+The following visuals are from my Society of Prevention Research (SPR) team's runner-up presentation for the Sloboda and Bukoski SPR Cup. The data provided to us was medicare data for an older sample. Our presentation was to examine if there were groups from the dichotomous health indicators (variables). We then wanted to examine if the groups we found were likely to have experienced a fall during the time of the data.
 
 ```{r}
 spr <- spr_d |> 
   mutate(
     class_num = case_when(
     class == 1 ~ "Poor Health",
-    class == 2 ~ "Foot Problems", 
+    class == 2 ~ "Feet Problems", 
     class == 3 ~ "Good Health",
     class == 4 ~ "Balance Problems"
+    ),
+    ind_group = case_when(
+      ind == "depression" ~ "Mental Health",
+      ind == "walking" ~ "Daily Functions",
+      ind == "adl" ~ "Daily Functions",
+      ind == "fell" ~ "Daily Functions",
+      ind == "numbfeet" ~ "Feet Issues",
+      ind == "tinglyfeet" ~ "Feet Issues",
+      ind == "obesity" ~ "Health Issues",
+      ind == "generalhealth" ~ "Health Issues",
+      ind == "arthritis" ~ "Health Issues",
+      ind == "osteoporosis" ~ "Health Issues",
+      ind == "vision" ~ "Health Issues"
     ),
     ind = case_when(
       ind == "depression" ~ "Depression",
@@ -60,8 +78,11 @@ spr <- spr |>
         )
     )
   )
+```
 
+This visual accompanies a Latent Class Analysis (LCA) including various health-related indicators to see if there were latent (hidden) classes/groups among medicare recipients. A LCA uses categorical, mostly dichotomous variables, as indicators to measure membership in these classes, which are often parsed out by examining the probabilities of indicators and domain knowledge for naming the classes. In the analysis below, the following names were chosen: "Balance Problems", "Feet Problems", "Good Health", and "Poor Health". These names were chosen based on the probabilities for each indicator. Colors used were to show the indicators that were similar to one another when introducing them into the analysis. The "Tingly Feet" and "Numb Feet" were indicators that had to do with a person's feet, while we also included physical health indicators, mental health indicators, and day-to-day activities. The probability of each indicator is then used to see if it would be included in creating the class name. For instance, the "Good Health" class shows that people in this class had low likelihoods of having feet problems, day-to-day problems, and good mental and physical health. 
 
+```{r}
 spr |>
   ggplot(
     aes(
@@ -71,7 +92,7 @@ spr |>
     ) +
   geom_col(
     aes(
-      fill = as.factor(class)
+      fill = as.factor(ind_group)
     ),
       color = "white"
     ) +
@@ -84,7 +105,7 @@ spr |>
       0,
       1
     ),
-    breaks = seq(0, 1, .1)
+    breaks = seq(0, 1, .2)
     ) +
   theme_classic() +
   labs(
@@ -101,6 +122,8 @@ spr |>
   NULL
 ```
 
+While there are other reasons for choosing a model, including model parsimony, we chose a model based on scree plots for our three model fit indices. We ended up choosing the 4-class model based on using these fit indices and the elbow method, a method that assists in choosing a model based on when the fit indices go from bending at an extreme angle to a flattened angle.
+
 ```{r model fit}
 fit <- data.frame("class_num" = c(1:10),
                   "AIC" = c(2066815.656, 1824708.7, 1797171.68, 1778126.43, 1773890.7, 
@@ -111,7 +134,11 @@ fit <- data.frame("class_num" = c(1:10),
                                      1770819.61, 1769746.19, 1768546.87, 1767738.72, 1767019.57))
 
 tidy_fit <- fit |> 
-  gather("fit_indice", "values", -1)
+  pivot_longer(
+    cols = -class_num,
+    names_to = "fit_indice",
+    values_to = "values"
+    )
 
 
 tidy_fit <- tidy_fit |> 
@@ -151,18 +178,19 @@ tidy_fit |>
     )
 ```
 
+We then took the LCA findings and used the classes we found and predicted whether these classes were likely to have fallen by the two-year follow up. The findings supported that those in the class with high probabilities of all the indicators showing poor health were more likely to have fallen, especially when compared to those with good health.
 
 ```{r}
 cohort11 <- data.frame("latent_class" = c("Good Health", "Foot Problems", "Balance Problems", "Poor Health"),
                        "prob" = c(.12, .20, .41, .52))
 
 cohort11 |> 
-  ggplot(aes(latent_class, prob)) +
+  ggplot(aes(fct_reorder(latent_class, prob), prob)) +
   geom_col(aes(fill = latent_class), color = "white") +
   scale_fill_manual(values = c("#104735", "#235E39", "#20883F", "#489D46")) +
   labs(x = " ", 
        y = "Probability",
-       title = "Probability of Having Fallen\nin Past Year at Two-Year Follow-up") +
+       title = "Probability of Having Fallen\nin Past Year at Two-Year Follow Up") +
   theme_classic() +
   theme(legend.position = "none",
         title = element_text(size = 20),
@@ -170,12 +198,17 @@ cohort11 |>
         axis.text.y = element_text(size = 15))
 ```
 
-
 ```{r}
+#| eval: false
+#| echo: false
+
 cohorts <- read_csv(here("projects/spr_cup_lca/data", "probfalls.csv"))
 ```
 
 ```{r}
+#| eval: false
+#| echo: false
+
 foot_prob <- cohorts |> 
   filter(classes == "foot_problems")
 
@@ -206,6 +239,12 @@ cohorts |>
        caption = "ACA = Affordable Care Act",
        title = "Probabilities of Problems Across Cohorts")  +
   theme(legend.position = "none")
+```
+
+
+```{r}
+#| eval: false
+#| echo: false
 
 cohorts |> 
   filter(classes == "good_health") |> 
@@ -223,4 +262,3 @@ cohorts |>
   geom_text(label = "Good\nHealth", hjust = 0.5, vjust = 1.5, color = "#036936") +
   theme(legend.position = "none")
 ```
-
