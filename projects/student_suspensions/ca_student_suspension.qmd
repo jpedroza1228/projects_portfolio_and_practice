@@ -1,6 +1,13 @@
 ---
 title: "Students with Disabilities and Suspension in California Districts"
-format: html
+format: 
+  html:
+    code-fold: true
+execute:
+  fig-height: 8
+  fig-width: 8
+  warning: false
+  message: false
 ---
 
 ## Data
@@ -12,13 +19,12 @@ Data gathered from The California Department of Education's [Special Education D
 Data was then loaded from the `txt` files and saved as csv files in case files were changed from the California Department of Education. You can find the data files as `csv` files [here]().
 
 ```{r}
-#| echo: false
-#| include: false
-#| eval: true
-
 library(tidyverse)
 library(reactable)
 library(cmdstanr)
+library(rstan)
+library(posterior)
+library(bayesplot)
 library(brms)
 library(broom)
 library(broom.mixed)
@@ -145,9 +151,6 @@ data <- data |>
     - A program setting where a student with disabilities participates in regular general education classroom setting, which includes at least 50 percent nondisabled students, at least 80 percent of the school day. On the report, data in these columns represent the number/percentage of the Special Education Enrollment for students whose Special Education Program Setting is Regular Classroom/Public Day School or Regular Independent Study or Virtual Charter and whose General Education Classroom Setting is Regular Class 80 Percent or More of the Day.
 
 ```{r}
-#| echo: true
-#| eval: true
-
 data |> 
   count(
     reporting_category
@@ -214,15 +217,11 @@ data |>
 ## Checking Predictors
 
 ```{r}
-#| echo: true
-#| eval: true
-
 data |>
   inspectdf::inspect_cor(with = "suspension_count_defiance_only") |>
   inspectdf::show_plot()
 
 cor.test(data$ps_rcgt80_n, data$sped_enr_n)
-
 ```
 
 ## Modeling
@@ -230,13 +229,16 @@ cor.test(data$ps_rcgt80_n, data$sped_enr_n)
 ### No Covariates
 
 ```{r}
+#| eval: false
+#| echo: true
+
 fit_no <- brm(
   suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + (1 | county_name),
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 10)", class = "b"),
-    set_prior("normal(0, 10)", class = "sd")
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -249,8 +251,8 @@ fit2_no <- brm(
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 10)", class = "b"),
-    set_prior("normal(0, 10)", class = "sd")
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -273,8 +275,8 @@ fit <- brm(
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 10)", class = "b"),
-    set_prior("normal(0, 10)", class = "sd")
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -287,8 +289,8 @@ fit2 <- brm(
   data = data,
   family = gaussian(),
   prior = c(
-    set_prior("normal(0, 10)", class = "b"),
-    set_prior("normal(0, 10)", class = "sd")
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
   ),
   cores = parallel::detectCores(),
   control = list(adapt_delta = .95),
@@ -301,20 +303,13 @@ saveRDS(fit2, here::here("projects/student_suspensions/data", "unduplicated_mode
 ```
 
 ```{r}
-#| eval: true
-#| echo: false
-
 fit_no <- read_rds(here::here("projects/student_suspensions/data", "model_fit_no_covariates.RDS"))
 fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit_w_covariates.RDS"))
-
 ```
 
 ### Defiance Only Suspensions
 
 ```{r}
-#| eval: true
-#| echo: false
-
 tidy(fit_no) |>
   mutate(
     across(
@@ -327,7 +322,10 @@ tidy(fit_no) |>
       ~round(.x, 2)
     )
   ) |>
-  reactable()
+  reactable(
+    filterable = TRUE,
+    searchable = TRUE
+  )
 
 none <- ranef(fit_no)$county_name |>
   as_tibble(rownames = "county") |>
@@ -382,9 +380,6 @@ none
 ### Unduplicated Defiance Only Suspensions
 
 ```{r}
-#| eval: true
-#| echo: false
-
 tidy(fit) |>
   mutate(
     across(
@@ -397,7 +392,10 @@ tidy(fit) |>
       ~round(.x, 2)
     )
   ) |>
-  reactable()
+  reactable(
+    filterable = TRUE,
+    searchable = TRUE
+  )
 
 covariates <- ranef(fit)$county_name |>
   as_tibble(rownames = "county") |>
@@ -437,15 +435,13 @@ covariates
 ```{r}
 library(patchwork)
 
-none + covariates
+none/covariates
 ```
 
 ## All Code Below
 
 
 ```{r}
-#| echo: true
-#| eval: true
 sessioninfo::session_info()
 ```
 
@@ -457,6 +453,9 @@ sessioninfo::session_info()
 library(tidyverse)
 library(reactable)
 library(cmdstanr)
+library(rstan)
+library(posterior)
+library(bayesplot)
 library(brms)
 library(broom)
 library(broom.mixed)
@@ -574,7 +573,10 @@ data |>
     arrange(
       desc(n)
     ) |>
-    reactable()
+    reactable(
+    filterable = TRUE,
+    searchable = TRUE
+  )
 
 data <- data |>
   filter(
