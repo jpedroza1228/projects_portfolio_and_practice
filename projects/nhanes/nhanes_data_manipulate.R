@@ -9,7 +9,7 @@ library(bayesplot)
 
 cat_map <- purrr::map
 
-# 2011 - 2012 data
+# 2015 - 2016 data
 
 hdl <- read_xpt("https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2015/DataFiles/HDL_I.xpt") |> 
   janitor::clean_names() |> 
@@ -347,6 +347,28 @@ cat_map <- purrr::map
 
 latino <- read_rds(here::here("projects/nhanes/latino_20plus.rds"))
 
+latino |> count()
+
+psych::describe(latino)[c("mean", "sd")]
+
+latino |> count(birth_country)
+
+cat_map(
+  latino |>
+  select(
+    sex,
+    race_latino,
+    birth_country,
+    citizen,
+    length_us,
+    ed,
+    annual_house_income
+  ),
+  ~prop.table(table(.x))*100
+)
+
+inspectdf::inspect_na(latino)
+
 pred_matrix <- make.predictorMatrix(data = latino)
 imp_method <- make.method(data = latino)
 
@@ -445,7 +467,7 @@ lpa <- cat_map(
   )
 )
 
-saveRDS(lpa, here::here("projects/nhanes/lpa_model.rds"))
+# saveRDS(lpa, here::here("projects/nhanes/lpa_model.rds"))
 
 lpa[[1]]$parameters$mean |>
   as_tibble() |> 
@@ -476,6 +498,8 @@ all_profile_mean <- map_dfr(
 
 # saveRDS(all_profile_mean, here::here("projects/nhanes/all_imputed_profile_means.rds"))
 
+all_profile_mean <- read_rds(here::here("projects/nhanes/all_imputed_profile_means.rds"))
+
 psych::describeBy(all_profile_mean[, 2:6], all_profile_mean$indicator)
 
 all_profile_mean |> 
@@ -503,6 +527,25 @@ all_profile <-
 
 # saveRDS(all_profile, here::here("projects/nhanes/all_imputed_profile_probabilities.rds"))
 
+all_profile <- read_rds(here::here("projects/nhanes/all_imputed_profile_probabilities.rds"))
+
+all_profile |> 
+  pivot_longer(
+    -c(
+      id,
+      imp
+    )
+  ) |> 
+  arrange(id) |> 
+  group_by(
+    id,
+    imp
+  ) |>
+  filter(
+    value == max(value)
+  )
+
+
 mode_profile <- all_profile |> 
   pivot_longer(
     -c(
@@ -529,3 +572,22 @@ mode_profile <- all_profile |>
   
 # saveRDS(mode_profile, here::here("projects/nhanes/most_common_profile.rds"))
 
+mean_profile <- 
+all_profile |>
+  pivot_longer(
+    -c(
+      id,
+      imp
+    )
+  ) |> 
+  group_by(
+    id,
+    name
+  ) |>
+  summarize(
+    avg = mean(value)
+  ) |>
+  ungroup(name) |>
+  filter(
+    avg == max(avg)
+  )
