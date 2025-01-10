@@ -19,8 +19,17 @@ Data gathered from The California Department of Education's [Special Education D
 Data was then loaded from the `txt` files and saved as csv files in case files were changed from the California Department of Education. You can find the data files as `csv` files [here]().
 
 ```{r}
+react_table <- function(data){
+  {{data}} |>
+  reactable::reactable(
+    filterable = TRUE,
+    searchable = TRUE,
+    sortable = TRUE,
+    minRows = 10
+  )
+}
+
 library(tidyverse)
-library(reactable)
 library(cmdstanr)
 library(rstan)
 library(posterior)
@@ -107,8 +116,6 @@ data <- data |>
     )
   )
 
-data <- data |> drop_na()
-
 data <- data |> 
   filter(
     str_detect(
@@ -116,6 +123,19 @@ data <- data |>
       "DC"
     )
   )
+
+data <- 
+data |> 
+  drop_na(
+    total_suspensions,
+    cumulative_enrollment,
+    suspension_count_defiance_only,
+    ps_rcgt80_percent,
+    county_name,
+    reporting_category
+  )
+
+
 
 data <- data |>
   mutate(
@@ -151,6 +171,16 @@ data <- data |>
     - A program setting where a student with disabilities participates in regular general education classroom setting, which includes at least 50 percent nondisabled students, at least 80 percent of the school day. On the report, data in these columns represent the number/percentage of the Special Education Enrollment for students whose Special Education Program Setting is Regular Classroom/Public Day School or Regular Independent Study or Virtual Charter and whose General Education Classroom Setting is Regular Class 80 Percent or More of the Day.
 
 ```{r}
+data |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent
+    )
+  ) +
+  geom_histogram(
+    fill = "dodgerblue"
+  )
+
 data |> 
   count(
     reporting_category
@@ -175,11 +205,6 @@ data |>
   ) |>
   arrange(desc(n)) |>
   reactable()
-
-data <- data |>
-  filter(
-    !reporting_category %in% c("DC_TBI", "DC_EMD")
-  )
 
 data |>
   ggplot(
@@ -212,11 +237,30 @@ data |>
   theme(
     legend.position = "none"
   )
+
+data |>
+  ggplot(
+    aes(
+      suspension_count_defiance_only
+    )
+  ) +
+  geom_histogram(
+    fill = "dodgerblue"
+  )
 ```
 
 ## Checking Predictors
 
 ```{r}
+data |>
+  count(
+    suspension_count_defiance_only,
+    sort = TRUE
+  ) |>
+  mutate(
+    percent =(n/sum(n))*100
+  )
+
 data |>
   inspectdf::inspect_cor(with = "suspension_count_defiance_only") |>
   inspectdf::show_plot()
@@ -233,35 +277,22 @@ cor.test(data$ps_rcgt80_n, data$sped_enr_n)
 #| echo: true
 
 fit_no <- brm(
-  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + (1 | county_name),
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_percent + (1 | county_name),
   data = data,
   family = gaussian(),
   prior = c(
     set_prior("normal(0, 1)", class = "b"),
     set_prior("normal(0, 1)", class = "sd")
   ),
-  cores = parallel::detectCores(),
-  control = list(adapt_delta = .95),
-  seed = 12345,
-  backend = "cmdstanr"
-)
-
-fit2_no <- brm(
-  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n  + (1 | county_name),
-  data = data,
-  family = gaussian(),
-  prior = c(
-    set_prior("normal(0, 1)", class = "b"),
-    set_prior("normal(0, 1)", class = "sd")
-  ),
-  cores = parallel::detectCores(),
-  control = list(adapt_delta = .95),
+  cores = parallel::detectCores() - 1,
+  control = list(adapt_delta = .9),
+  # warmup = 2000,
+  # iter = 4000,
   seed = 12345,
   backend = "cmdstanr"
 )
 
 saveRDS(fit_no, here::here("projects/student_suspensions/data", "model_fit_no_covariates.RDS"))
-saveRDS(fit2_no, here::here("projects/student_suspensions/data", "unduplicated_model_fit_no_covariates.RDS"))
 ```
 
 ### With Covariates
@@ -271,35 +302,22 @@ saveRDS(fit2_no, here::here("projects/student_suspensions/data", "unduplicated_m
 #| echo: true
 
 fit <- brm(
-  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + cumulative_enrollment + total_suspensions + (1 | county_name),
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_percent + cumulative_enrollment + total_suspensions + (1 | county_name),
   data = data,
   family = gaussian(),
   prior = c(
     set_prior("normal(0, 1)", class = "b"),
     set_prior("normal(0, 1)", class = "sd")
   ),
-  cores = parallel::detectCores(),
-  control = list(adapt_delta = .95),
-  seed = 12345,
-  backend = "cmdstanr"
-)
-
-fit2 <- brm(
-  unduplicated_count_of_students_suspended_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_n + cumulative_enrollment + total_suspensions  + (1 | county_name),
-  data = data,
-  family = gaussian(),
-  prior = c(
-    set_prior("normal(0, 1)", class = "b"),
-    set_prior("normal(0, 1)", class = "sd")
-  ),
-  cores = parallel::detectCores(),
-  control = list(adapt_delta = .95),
+  cores = parallel::detectCores() - 1,
+  control = list(adapt_delta = .9),
+  # warmup = 2000,
+  # iter = 4000,
   seed = 12345,
   backend = "cmdstanr"
 )
 
 saveRDS(fit, here::here("projects/student_suspensions/data", "model_fit_w_covariates.RDS"))
-saveRDS(fit2, here::here("projects/student_suspensions/data", "unduplicated_model_fit_w_covariates.RDS"))
 ```
 
 ```{r}
@@ -307,25 +325,31 @@ fit_no <- read_rds(here::here("projects/student_suspensions/data", "model_fit_no
 fit <- read_rds(here::here("projects/student_suspensions/data", "model_fit_w_covariates.RDS"))
 ```
 
-### Defiance Only Suspensions
-
 ```{r}
+color_scheme_set("viridis")
+
+fit_no
+
 tidy(fit_no) |>
   mutate(
     across(
-      -c(
-        effect,
-        component,
-        group,
-        term
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high
       ),
       ~round(.x, 2)
     )
   ) |>
-  reactable(
-    filterable = TRUE,
-    searchable = TRUE
-  )
+  arrange(
+    desc(
+      abs(
+        estimate
+      )
+    )
+  ) |>
+  react_table()
 
 none <- ranef(fit_no)$county_name |>
   as_tibble(rownames = "county") |>
@@ -356,46 +380,190 @@ none <- ranef(fit_no)$county_name |>
   )
 
 none
+
+pp_check(fit_no)
+
+pp_check(
+  fit_no,
+  type = "intervals",
+  prefix = "ppc"
+  )
+
+pp_check(
+  fit_no,
+  type = "error_hist",
+  prefix = "ppc"
+  )
+
+fit_no$data |> head()
+
+y <- data$suspension_count_defiance_only
+yrep <- posterior_predict(fit_no)
+
+length(y_no) == ncol(yrep)
+
+mcmc_trace(
+  fit_no,
+  pars = c(
+    "sd_county_name__Intercept",
+    "sigma",
+    "Intercept"
+  ) 
+)
+
+mcmc_trace(
+  fit_no,
+  regex_pars = "b_" 
+)
+
+mcmc_trace(
+  fit_no,
+  regex_pars = "^r_"
+)
+
+
+mcmc_intervals(
+  fit_no,
+  pars = c(
+    "sd_county_name__Intercept",
+    "sigma",
+    "Intercept"
+  ) 
+)
+
+mcmc_intervals(
+  fit_no,
+  regex_pars = "b_"
+)
+
+mcmc_intervals(
+  fit_no,
+  regex_pars = "^r_"
+)
+
+# compare y to yrep
+ppc_stat(y_no, yrep, stat = "median")
+ppc_stat(y_no, yrep, stat = "sd")
+
+# predictions
+levels(data$reporting_category)
+levels(as.factor(data$county_name))
+
+report_cat_prob <- c(.05, .16, .05, .13, .05, .05, .05, .05, .11, .05, .05, .1, .1)
+county_prob <- rep(.1, 57)
+n <- 1000
+
+# grid_data <- expand_grid(
+#   reporting_category = factor(sample(levels(data$reporting_category), size = n, replace = TRUE, prob = report_cat_prob)),
+#   ps_rcgt80_percent = rnorm(n, .5, 1),
+#   county_name = factor(sample(levels(as.factor(data$county_name)), size = n, replace = TRUE, prob = county_prob))
+# )
+
+grid_data <- expand_grid(
+  reporting_category = c("DC_AUT", "DC_ID"),
+  ps_rcgt80_percent = c(.5),
+  county_name = c("Los Angeles", "Orange")
+)
+
+grid_data
+
+
+fit_no_pred <- fit_no |>
+  predicted_draws(
+    newdata = grid_data
+  )
+
+mean(fit_no_pred$.prediction)
+median(fit_no_pred$.prediction)
+sd(fit_no_pred$.prediction)
+
+get_variables(fit_no)
 ```
 
-**Findings Without Covariates**
-
-- students with disabilities that were in regular classes 80% of the time did not have much of a difference in suspension counts
-- students that were deaf or had hearing impairments that were in regular classes 80% of the time had greater log odds of being suspended for defiance in comparison to students with specific learning disabilities (2.39, 95% Credible Intervals: 1.32, 3.43)
-- students that had emotional disturbance disabilities that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.35, 95% Credible Intervals: .24, .46)
-- students that were hard of hearing that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.16, 95% Credible Intervals: .07, .25)
-- students with intellectual disabilities that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.69, 95% Credible Intervals: .46, .92)
-- students with multiple disabilities that were in regular classes 80% of the time had greater log odds of being suspended for defiance in comparison to students with specific learning disabilities (1.51, 95% Credible Intervals: .28, 2.73) **MAYBE**
-- students with orthopedic health impairments that were in regular classes 80% of the time had lower log odds of being suspended for defiance in comparison to students with specific learning disabilities (.40, 95% Credible Intervals: .19, .60)
-
-**Random Findings without Covariates**
-
-- It seems that Sacramento is providing more suspensions to students in special education classes more than any other California county.
-- The bordering counties of Sacramento, Stanislaus, San Joaquin, and Solano counties all have the highest 
-
-**Findings with Covariates**
-
-- Sacramento and Stanislaus counties are suspending more students in special education classes more than any other California county. This is even when considering the cumulative enrollment in the counties and the total number of suspensions.
-
-### Unduplicated Defiance Only Suspensions
-
 ```{r}
+fit
+
 tidy(fit) |>
   mutate(
     across(
-      -c(
-        effect,
-        component,
-        group,
-        term
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high
       ),
       ~round(.x, 2)
     )
   ) |>
-  reactable(
-    filterable = TRUE,
-    searchable = TRUE
-  )
+  arrange(
+    desc(
+      abs(
+        estimate
+      )
+    )
+  ) |>
+  react_table()
+
+tidy(fit) |>
+  filter(
+    term %in% c(
+      "as.factorreporting_categoryDC_TBI:ps_rcgt80_percent",
+      "as.factorreporting_categoryDC_VI:ps_rcgt80_percent",
+      "sd__(Intercept)",
+      "sd__Observation",
+      "total_suspensions"
+    )
+  ) |>
+  mutate(
+    across(
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  arrange(
+    desc(
+      abs(
+        estimate
+      )
+    )
+  ) |>
+  react_table()
+
+data |> 
+  filter(
+    reporting_category %in% c(
+      "DC_SLD",
+      "DC_TBI",
+      "DC_VI"
+    )
+  ) |>
+  ggplot(
+    aes(
+      ps_rcgt80_percent,
+      suspension_count_defiance_only
+    )
+  ) +
+  geom_point(
+    aes(
+      color = reporting_category
+    )
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    aes(
+      color = reporting_category
+    )
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE
+  ) +
+  theme_light()
 
 covariates <- ranef(fit)$county_name |>
   as_tibble(rownames = "county") |>
@@ -426,11 +594,715 @@ covariates <- ranef(fit)$county_name |>
   )
 
 covariates
+
+pp_check(fit, ndraws = 500)
+
+pp_check(
+  fit,
+  type = "hist",
+  prefix = "ppc"
+  )
+
+pp_check(
+  fit,
+  type = "error_hist",
+  prefix = "ppc"
+  )
+
+yrep2 <- posterior_predict(fit)
+
+length(y_fit)
+ncol(yrep2)
+
+mcmc_trace(
+  fit,
+  pars = c(
+    "sd_county_name__Intercept",
+    "sigma",
+    "Intercept"
+  ) 
+)
+
+mcmc_trace(
+  fit,
+  regex_pars = "b_" 
+)
+
+mcmc_trace(
+  fit,
+  regex_pars = "^r_"
+)
+
+mcmc_intervals(
+  fit,
+  regex_pars = "b_"
+)
+
+
+# compare y to yrep
+ppc_stat(y_fit, yrep2, stat = "median")
+ppc_stat(y_fit, yrep2, stat = "sd")
+
+grid_data <- grid_data |> 
+  mutate(
+    cumulative_enrollment = c(500),
+    total_suspensions = 0
+  )
+
+fit_pred <- fit |>
+  predicted_draws(
+    newdata = grid_data
+  )
+
+mean(fit_pred$.prediction)
+median(fit_pred$.prediction)
+sd(fit_pred$.prediction)
+
+get_variables(fit)
+
+yrep2_df <- yrep2 |> 
+  as_tibble() |>
+  summarize(
+    across(
+      everything(),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE),
+        min = ~min(.x, na.rm = TRUE),
+        max = ~max(.x, na.rm = TRUE)
+      )
+    )
+  ) |>
+  pivot_longer(
+    cols = everything()
+  )
+
+# posterior predictive p-value (PPP)
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "mean"
+    )
+  ) |>
+  mutate(
+    y_fit = mean(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "median"
+    )
+  ) |>
+  mutate(
+    y_fit = median(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "sd"
+    )
+  ) |>
+  mutate(
+    y_fit = sd(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "min"
+    )
+  ) |>
+  mutate(
+    y_fit = min(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "max"
+    )
+  ) |>
+  mutate(
+    y_fit = max(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
 ```
 
-**Findings with Covariates**
+# Count Model
 
-- When considering unduplicated number of suspensions, Sacramento still had the highest number of suspensions for defiance only; however the difference with other counties was not as drastic. Further examination is needed into why Sacramento is suspending students in special education courses.
+```{r}
+#| echo: true
+#| eval: false
+
+cfit <- brm(
+  suspension_count_defiance_only ~ as.factor(reporting_category)*ps_rcgt80_percent +
+  cumulative_enrollment + total_suspensions +
+  (1 | county_name),
+  data = data,
+  family = zero_inflated_poisson("log"),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores() - 1,
+  control = list(adapt_delta = .9),
+  # warmup = 2000,
+  # iter = 4000,
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+saveRDS(cfit, here::here("projects/student_suspensions/data", "count_fit_w_covariates.RDS"))
+```
+
+```{r}
+cfit <- read_rds(here::here("projects/student_suspensions/data", "count_fit_w_covariates.RDS"))
+```
+
+```{r}
+cfit
+
+tidy(cfit) |>
+  mutate(
+    across(
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  arrange(
+    desc(
+      abs(
+        estimate
+      )
+    )
+  ) |>
+  react_table()
+
+count_random <- ranef(cfit)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+
+count_random
+
+pp_check(cfit)
+
+pp_check(
+  cfit,
+  type = "intervals",
+  prefix = "ppc"
+  )
+
+pp_check(
+  cfit,
+  type = "hist",
+  prefix = "ppc"
+  )
+
+pp_check(
+  cfit,
+  type = "error_hist",
+  prefix = "ppc"
+  )
+
+yrep3 <- posterior_predict(cfit)
+
+length(y_fit)
+ncol(yrep2)
+
+mcmc_trace(
+  fit,
+  pars = c(
+    "sd_county_name__Intercept",
+    "sigma",
+    "Intercept"
+  ) 
+)
+
+mcmc_trace(
+  fit,
+  regex_pars = "b_" 
+)
+
+mcmc_trace(
+  fit,
+  regex_pars = "^r_"
+)
+
+mcmc_intervals(
+  fit,
+  regex_pars = "b_"
+)
+
+
+# compare y to yrep
+ppc_stat(y_fit, yrep2, stat = "median")
+ppc_stat(y_fit, yrep2, stat = "sd")
+
+grid_data <- grid_data |> 
+  mutate(
+    cumulative_enrollment = c(500),
+    total_suspensions = 0
+  )
+
+fit_pred <- fit |>
+  predicted_draws(
+    newdata = grid_data
+  )
+
+mean(fit_pred$.prediction)
+median(fit_pred$.prediction)
+sd(fit_pred$.prediction)
+
+get_variables(fit)
+
+yrep2_df <- yrep2 |> 
+  as_tibble() |>
+  summarize(
+    across(
+      everything(),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE)
+      )
+    )
+  ) |>
+  pivot_longer(
+    cols = everything()
+  )
+
+# posterior predictive p-value (PPP)
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "mean"
+    )
+  ) |>
+  mutate(
+    y_fit = mean(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "median"
+    )
+  ) |>
+  mutate(
+    y_fit = median(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep2_df |>
+  filter(
+    str_detect(
+      name,
+      "sd"
+    )
+  ) |>
+  mutate(
+    y_fit = sd(y_fit),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+```
+
+# Logit Model
+
+```{r}
+#| echo: true
+#| eval: false
+
+data <- data |>
+  mutate(
+    defiance = case_when(
+      suspension_count_defiance_only == 0 ~ 0,
+      TRUE ~ 1
+    )
+  )
+
+lfit <- brm(
+  defiance ~ as.factor(reporting_category)*ps_rcgt80_percent +
+  cumulative_enrollment + total_suspensions +
+  (1 | county_name),
+  data = data,
+  family = bernoulli(link = "logit"),
+  prior = c(
+    set_prior("normal(0, 1)", class = "b"),
+    set_prior("normal(0, 1)", class = "sd")
+  ),
+  cores = parallel::detectCores() - 1,
+  control = list(adapt_delta = .9),
+  # warmup = 2000,
+  # iter = 4000,
+  seed = 12345,
+  backend = "cmdstanr"
+)
+
+saveRDS(lfit, here::here("projects/student_suspensions/data", "logistic_fit_w_covariates.RDS"))
+```
+
+```{r}
+lfit <- read_rds(here::here("projects/student_suspensions/data", "logistic_fit_w_covariates.RDS"))
+```
+
+```{r}
+lfit
+
+tidy(lfit) |>
+  mutate(
+    across(
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  # arrange(
+  #   desc(
+  #     abs(
+  #       estimate
+  #     )
+  #   )
+  # ) |>
+  react_table()
+
+tidy(lfit) |>
+  filter(
+    effect == "fixed"
+  ) |>
+  mutate(
+    odds = exp(estimate),
+    across(
+      c(
+        estimate,
+        std.error,
+        conf.low,
+        conf.high,
+        odds
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  select(
+    term,
+    estimate:odds
+  ) |>
+  react_table()
+
+logit_random <- ranef(lfit)$county_name |>
+  as_tibble(rownames = "county") |>
+  ggplot(
+    aes(
+      fct_reorder(
+        county,
+        Estimate.Intercept
+      ),
+      Estimate.Intercept
+    )
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = Q2.5.Intercept,
+      ymax = Q97.5.Intercept
+      )
+    ) +
+  geom_point(
+    aes(
+      color = county
+    ),
+    size = 4
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "none"
+  )
+
+logit_random
+
+pp_check(lfit)
+
+pp_check(
+  lfit,
+  type = "intervals",
+  prefix = "ppc"
+  )
+
+pp_check(
+  lfit,
+  type = "hist",
+  prefix = "ppc"
+  )
+
+pp_check(
+  lfit,
+  type = "error_hist",
+  prefix = "ppc"
+  )
+
+
+yrep4 <- posterior_predict(lfit)
+
+length(y)
+ncol(yrep4)
+
+get_variables(lfit)
+
+mcmc_trace(
+  lfit,
+  pars = c(
+    "sd_county_name__Intercept",
+    "Intercept"
+  ) 
+)
+
+mcmc_trace(
+  lfit,
+  regex_pars = "b_" 
+)
+
+mcmc_trace(
+  lfit,
+  regex_pars = "^r_"
+)
+
+mcmc_intervals(
+  lfit,
+  regex_pars = "b_"
+)
+
+
+# compare y to yrep
+ppc_stat(y, yrep4, stat = "median")
+ppc_stat(y, yrep4, stat = "sd")
+
+lfit_pred <- lfit |>
+  predicted_draws(
+    newdata = grid_data
+  )
+
+mean(lfit_pred$.prediction)
+median(lfit_pred$.prediction)
+sd(lfit_pred$.prediction)
+
+# get_variables(lfit)
+
+yrep4_df <- yrep4 |> 
+  as_tibble() |>
+  summarize(
+    across(
+      everything(),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE),
+        min = ~min(.x, na.rm = TRUE),
+        max = ~max(.x, na.rm = TRUE)
+      )
+    )
+  ) |>
+  pivot_longer(
+    cols = everything()
+  )
+
+# posterior predictive p-value (PPP)
+yrep4_df |>
+  filter(
+    str_detect(
+      name,
+      "mean"
+    )
+  ) |>
+  mutate(
+    y_fit = mean(y),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep4_df |>
+  filter(
+    str_detect(
+      name,
+      "median"
+    )
+  ) |>
+  mutate(
+    y_fit = median(y),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep4_df |>
+  filter(
+    str_detect(
+      name,
+      "sd"
+    )
+  ) |>
+  mutate(
+    y_fit = sd(y),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep4_df |>
+  filter(
+    str_detect(
+      name,
+      "min"
+    )
+  ) |>
+  mutate(
+    y_fit = min(y),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+
+yrep4_df |>
+  filter(
+    str_detect(
+      name,
+      "max"
+    )
+  ) |>
+  mutate(
+    y_fit = max(y),
+    over_under = value > y_fit,
+    over_under = case_when(
+      over_under == TRUE ~ 1,
+      over_under == FALSE ~ 0
+    )
+  ) |>
+  summarize(
+    prob = mean(over_under)
+  )
+```
 
 ```{r}
 library(patchwork)
