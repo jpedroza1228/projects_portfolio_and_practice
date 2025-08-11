@@ -1,0 +1,528 @@
+---
+title: "Walk Through of Several Functions"
+format: 
+  html:
+    toc: true
+    code-fold: show
+jupyter: python3
+---
+
+## Python Basics
+
+```{python}
+1 + 1
+```
+
+
+```{python}
+2 - 1
+```
+
+
+```{python}
+3 * 4
+```
+
+
+```{python}
+9 / 3
+```
+
+
+```{python}
+10 / 3
+```
+
+
+```{python}
+7**2
+```
+
+```{python}
+(3 + 7) * 12 - 3
+```
+
+## Saving Objects/Variables
+
+```{python}
+a = 3
+b = 8
+
+a + b
+```
+
+## Loading Packages
+
+```{python}
+# pip install pandas numpy plotnine palmerpenguins
+
+import pandas as pd
+import numpy as np
+import plotnine as pn 
+from palmerpenguins import load_penguins
+```
+
+## Loading Data
+
+```{python}
+penguins = load_penguins()
+penguins.head()
+
+# usually run the pandas function read_csv
+# penguins = pd.read_csv('penguins.csv')
+
+```
+
+## Help Documentation
+
+I would probably just google it since it might be easier to read.
+
+```{python}
+help(np.sqrt)
+```
+
+### Lists
+
+```{python}
+penguins['species'].unique()
+
+penguin_species_list = ['Adelie', 'Gentoo', 'Chinstrap']
+print(penguin_species_list)
+```
+
+### Dictionaries
+
+```{python}
+print(penguins.head())
+
+penguins.rename(columns = {'species': 'penguin_species', 'island': 'where_penguins_live'})
+```
+
+# Series
+
+```{python}
+series_values = pd.Series(penguins['species'])
+print(series_values)
+```
+
+## Getting More Info on the DataFrame
+
+```{python}
+penguins.head()
+
+print(penguins.shape, ': .shape prints out the number of rows and columns')
+```
+
+```{python}
+print(penguins.columns, ': .columns prints out the column names from the dataframe')
+```
+
+```{python}
+print(penguins.info(), ': .info gives you much more information about the data')
+```
+
+```{python}
+# size can be used for a series
+print(penguins['species'].size)
+```
+
+## Filtering
+
+```{python}
+penguins.loc[penguins['species'] == 'Adelie']
+penguins.loc[penguins['species'] == 'Gentoo']
+penguins.loc[penguins['species'] == 'Chinstrap']
+```
+
+```{python}
+penguins.loc[(penguins['species'] == 'Adelie') | (penguins['species'] == 'Chinstrap')]
+```
+
+is the same as 
+
+```{python}
+penguins.loc[penguins['species'].isin(['Adelie', 'Chinstrap'])]
+```
+
+```{python}
+penguins.loc[(penguins['species'] != 'Adelie')]
+```
+
+## Looking for Missing Values (Logical Test)
+
+```{python}
+pd.isna(penguins['body_mass_g'])
+```
+
+### Counts to see True/False
+
+```{python}
+pd.isna(penguins['body_mass_g']).value_counts()
+```
+
+## Plotnine
+
+```{python}
+(
+  pn.ggplot(penguins, pn.aes('bill_length_mm', 'flipper_length_mm'))
+  + pn.geom_point()
+  + pn.theme_light()
+)
+```
+
+```{python}
+(
+  pn.ggplot(penguins, pn.aes('bill_length_mm', 'flipper_length_mm'))
+  + pn.geom_point(alpha = .3)
+  + pn.geom_smooth(method = 'lm', se = True)
+  + pn.theme_light()
+)
+```
+
+## Selecting Columns
+
+```{python}
+# making a list of the columns I want
+
+interest_columns = ['sex', 'year', 'species', 'bill_length_mm']
+print(interest_columns)
+```
+
+```{python}
+print(penguins[interest_columns].head())
+```
+
+is the same thing
+
+```{python}
+print(penguins[['sex', 'year', 'species', 'bill_length_mm']].head())
+```
+
+## Renaming with Dictionary
+
+```{python}
+penguins.rename(columns = {'year': 'data_year'}).head()
+```
+
+## Subsetting
+
+```{python}
+penguins.loc[0:9, ['year', 'species']]
+```
+
+
+```{python}
+penguins.loc[0:9, 'species':'bill_length_mm']
+```
+
+```{python}
+penguins.loc[:, 'species':'bill_length_mm']
+```
+
+You can also use the `iloc` function to only use positive of rows and columns. 
+
+```{python}
+penguins.iloc[0:10, 0:3]
+```
+
+## Vectorized Calculations
+
+```{python}
+penguins['body_mass_kg'] = penguins['body_mass_g'] / 1000
+```
+
+## Sorting
+
+```{python}
+penguins.sort_values('body_mass_g')
+```
+
+## Function (Basic Functionality)
+
+```{python}
+def diff_calc(data, year, x):
+  if year == 2007:
+    avg = data[x].mean()
+    return avg
+  if year == 2008:
+    mid = data[x].median()
+    return mid
+  else:
+    most = data[x].mode()
+    return most
+```
+
+# This is not a good function. This simply shows the functionality of choosing different years.
+
+```{python}
+diff_calc(data = penguins, year = 2007, x = 'bill_length_mm')
+```
+
+```{python}
+diff_calc(data = penguins, year = 2008, x = 'bill_length_mm')
+```
+
+```{python}
+diff_calc(data = penguins, year = 2009, x = 'bill_length_mm')
+```
+
+# JP's Walkthrough with Data
+
+```{python}
+penguins.head()
+```
+
+```{python}
+penguins.describe().transpose()
+```
+
+```{python}
+cols = penguins.columns
+
+isna = penguins[cols].isna()
+
+
+for i in cols:
+  counts = isna[i].value_counts()
+  print(counts)
+```
+
+## Filling in Missing Data
+
+```{python}
+no_missing = penguins
+
+no_missing['bill_length_mm'] = penguins['bill_length_mm'].interpolate()
+no_missing['bill_depth_mm'] = penguins['bill_depth_mm'].interpolate()
+no_missing['flipper_length_mm'] = penguins['flipper_length_mm'].interpolate()
+no_missing['body_mass_g'] = penguins['body_mass_g'].interpolate()
+no_missing['body_mass_kg'] = penguins['body_mass_kg'].interpolate()
+
+penguins['sex'].mode()
+
+no_missing['sex'] = penguins['sex'].fillna('male')
+```
+
+## Visualizations
+
+```{python}
+def visual(data, x, y):
+  if data[x].dtype == float:
+    plot = (
+      pn.ggplot(data,  pn.aes(x, y))
+      + pn.geom_point(alpha = .3)
+      + pn.geom_smooth(method = 'lm', se = False)
+      + pn.theme_light()
+    )
+    return plot
+  else:
+    plot = (
+    pn.ggplot(data,  pn.aes(x, y))
+    + pn.geom_col(pn.aes(fill = x), position = 'dodge')
+    + pn.theme_light()
+    )
+    return plot
+
+```
+
+## Numeric Columns
+
+```{python}
+visual(no_missing, 'bill_length_mm', 'bill_depth_mm')
+```
+
+```{python}
+visual(no_missing, 'bill_length_mm', 'flipper_length_mm')
+```
+
+```{python}
+visual(no_missing, 'bill_length_mm', 'body_mass_g')
+```
+
+```{python}
+visual(no_missing, 'bill_depth_mm', 'flipper_length_mm')
+```
+
+```{python}
+visual(no_missing, 'bill_depth_mm', 'body_mass_g')
+```
+
+```{python}
+visual(no_missing, 'flipper_length_mm', 'body_mass_g')
+```
+
+## Non-Numeric X Value
+
+```{python}
+visual(no_missing, 'species', 'body_mass_g')
+```
+
+```{python}
+visual(no_missing, 'island', 'flipper_length_mm')
+```
+
+## Filtering W/Visuals
+
+```{python}
+no_miss_adelie = no_missing.loc[no_missing['species'] == 'Adelie']
+no_miss_gentoo = no_missing.loc[no_missing['species'] == 'Gentoo']
+no_miss_chinstrap = no_missing.loc[no_missing['species'] == 'Chinstrap']
+```
+
+```{python}
+visual(no_miss_adelie, 'island', 'flipper_length_mm')
+```
+
+```{python}
+visual(no_miss_gentoo, 'island', 'flipper_length_mm')
+```
+
+```{python}
+visual(no_miss_chinstrap, 'island', 'flipper_length_mm')
+```
+
+## Summary Calculations
+
+```{python}
+sum_calc = no_missing.groupby(['year', 'species', 'island']).agg({'flipper_length_mm': ['mean', 'median'], 'body_mass_g': ['mean', 'median']}).round(2).reset_index()
+
+print(sum_calc)
+```
+
+```{python}
+# this combines the column name with the function name
+# useful for creating the following table; leaves underscores after names
+sum_calc.columns = ["_".join(x) for x in sum_calc.columns.ravel()]
+```
+
+```{python}
+sum_calc.rename(columns = {'year_': 'year'})
+
+print(sum_calc)
+```
+
+### Great Tables
+
+```{python}
+from great_tables import GT
+
+GT(sum_calc)
+```
+
+### Long Data For Visualizations
+
+```{python}
+penguin_long = no_missing.melt(id_vars = ['year', 'species', 'island'], value_vars = ['flipper_length_mm', 'bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']).groupby(['year', 'species', 'island', 'variable']).mean('value').reset_index()
+```
+
+```{python}
+(
+  pn.ggplot(penguin_long, pn.aes('factor(island)', 'value'))
+  + pn.geom_col(pn.aes(fill = 'factor(species)'), position = pn.position_dodge())
+  + pn.coord_flip()
+  + pn.facet_wrap('variable', scales = 'free', ncol = 1)
+  + pn.theme(legend_position = 'bottom')
+  + pn.theme_light()
+)
+```
+
+# Don't Have Anything to Join w/ Data
+
+# Check Quarto Stuff on Content Summary for Weeks 7 & 10
+
+## Changing the Order of categories for `Species`
+
+```{python}
+(
+  pn.ggplot(no_missing, pn.aes('factor(island)', 'body_mass_g'))
+  + pn.geom_col(pn.aes(fill = 'factor(species)'), position = pn.position_dodge())
+  + pn.theme_light()
+)
+```
+
+```{python}
+no_missing['species'] = pd.Categorical(no_missing['species'], categories = ['Gentoo', 'Chinstrap', 'Adelie'])
+```
+
+```{python}
+(
+  pn.ggplot(no_missing, pn.aes('factor(island)', 'body_mass_g'))
+  + pn.geom_col(pn.aes(fill = 'factor(species)'), position = pn.position_dodge())
+  + pn.theme_light()
+)
+```
+
+# Quick Modeling
+
+## Looking For Interactions
+
+```{python}
+(
+  pn.ggplot(no_missing, pn.aes('bill_depth_mm', 'body_mass_g'))
+  + pn.geom_point(pn.aes(color = 'factor(island)'))
+  + pn.geom_smooth(pn.aes(color = 'factor(island)'), method = 'lm', se = False)
+  + pn.theme_light()
+)
+```
+
+```{python}
+import statsmodels.api as sm
+from sklearn.metrics import root_mean_squared_error
+
+# dummy coding
+island_dum = pd.get_dummies(no_missing['island'], prefix = 'island', dtype = float)
+species_dum = pd.get_dummies(no_missing['species'], prefix = 'species', dtype = float)
+
+no_missing = no_missing.join(island_dum)
+no_missing = no_missing.join(species_dum)
+
+# remove unnecessary columns/predictors and reference groups
+no_missing = no_missing.drop(columns = ['body_mass_kg', 'island', 'species', 'island_Biscoe', 'species_Gentoo'])
+```
+
+```{python}
+no_missing['bill_depth_x_dream'] = no_missing['bill_depth_mm']*no_missing['island_Dream']
+no_missing['bill_depth_x_torgersen'] = no_missing['bill_depth_mm']*no_missing['island_Torgersen']
+
+no_missing['sex'] = np.select(
+  [no_missing['sex'] == 'male', no_missing['sex'] == 'female'],
+  [1, 0]
+)
+
+y = no_missing['body_mass_g']
+x = no_missing.drop(columns = 'body_mass_g')
+
+#y = np.array(y)
+#x = np.array(x)
+
+x = sm.add_constant(x)
+```
+
+### Look at the Content Summary for Coefficient Interpretation
+
+```{python}
+results = sm.OLS(y, x).fit()
+
+print(results.summary(), '\n')
+
+print(results.params, '\n')
+
+y_pred = results.predict(x)
+
+print(root_mean_squared_error(y, y_pred), '\n')
+```
+
+### Plotting the Residuals
+
+```{python}
+resid_df = pd.DataFrame({'residual': results.resid}).reset_index()
+```
+
+```{python}
+(
+  pn.ggplot(resid_df, pn.aes('index', 'residual'))
+  + pn.geom_hline(yintercept = 0, color = 'black')
+  + pn.geom_point(color = 'dodgerblue')
+  + pn.theme_light()
+)
+```

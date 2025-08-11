@@ -1,0 +1,397 @@
+---
+title: "Walk Through of Several Functions"
+format: 
+  html:
+    toc: true
+    code-fold: show
+---
+
+# Loading Packages for All Extensions
+
+```{python}
+#| eval: true
+#| echo: false
+
+import pandas as pd
+from janitor import clean_names
+import matplotlib.pyplot as plt
+import plotnine as pn
+
+# Set a display option so all columns of tables are displayed
+pd.set_option('display.max_columns', None)
+pd.set_option('mode.copy_on_write', True)
+rcParams.update({'savefig.bbox': 'tight'}) # Keeps plotnine legend from being cut off
+```
+
+## To Include With Code
+
+```{python}
+#| eval: false
+#| echo: true
+
+covid = pd.read_csv('data/covid.csv')
+```
+
+## To Be Run
+
+```{python}
+#| eval: true
+#| echo: false
+
+covid = pd.read_csv('/home/jon/Documents/github_repos/data_visualizations/posit_python_cheatsheet/covid.csv')
+```
+
+
+# Python Basics
+
+## Chaining Functions Together
+
+```{python}
+(
+  covid['date']
+  .value_counts(normalize = True)
+  .reset_index()
+  .round(4)
+)
+```
+
+## Creating Glimpse Function
+
+```{python}
+def glimpse(df):
+    print(f"Rows: {df.shape[0]}")
+    print(f"Columns: {df.shape[1]}")
+    for col in df.columns:
+        print(f"$ {col} <{df[col].dtype}> {df[col].head().values}")
+
+glimpse(covid)
+```
+
+## Putting Text to Print Function
+
+```{python}
+print("The average number of covid cases for the dataset was", covid['cases'].mean().round(2))
+
+print("The average number of covid cases for the dataset was", '\n', covid['cases'].mean().round(2))
+```
+
+## Using the Describe & Transpose Functions
+
+```{python}
+covid.describe()
+covid.describe().transpose()
+```
+
+## Different Methods for Value Counts
+
+```{python}
+state = covid['state']
+
+# using the series within the function as an argument
+# not recommended because this functionality will not always be used
+pd.value_counts(state)
+
+# using a series for value counts
+state.value_counts()
+# using a series for value counts
+covid['state'].value_counts()
+# both examples above are exactly the same
+
+# using df for all the value counts
+covid.value_counts()
+```
+
+```{python}
+# https://pandas.pydata.org/docs/reference/api/pandas.Series.value_counts.html
+covid['state'].value_counts(normalize = True, ascending = True)
+```
+
+## Filter & Visualize
+
+```{python}
+(
+  covid
+  .loc[covid['state'] == 'CA']
+  .head()
+)
+
+(
+  covid
+  .loc[(covid['state'] == 'CA') & (covid['cases'] >= 0)]
+  .head()
+)
+
+covid.loc[covid['state'].isin(['CA', 'WA', 'OR'])].value_counts('state')
+
+import numpy as np
+
+np.unique(west_covid['state'])
+```
+
+
+```{python}
+extra = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-03-05/trashwheel.csv')
+
+extra[['Name', 'Weight', 'Dumpster']].groupby('Name').mean('Weight').reset_index().sort_values('Dumpster', ascending = False)
+```
+
+
+```{python}
+ny = covid.loc[covid['state'] == 'NY']
+nony = covid.loc[covid['state'] != 'NY']
+
+pn.ggplot.show(
+  pn.ggplot(data = ny)
+  + pn.geom_line(mapping = pn.aes(x = 'date', y = 'cases', group = 1))
+  + pn.geom_line(mapping = pn.aes(x = 'date', y = 'deaths', group = 1))
+)
+```
+
+```{python}
+pn.ggplot.show(
+  pn.ggplot(data = nony, mapping = pn.aes(x = 'cases', y = 'deaths'))
+  + pn.geom_point(alpha = .2, color = 'gray')
+  + pn.geom_point(data = ny, color = 'red', alpha = .8)
+  + pn.theme_light()
+)
+```
+
+# Select
+
+```{python}
+# covid['date'] = pd.to_datetime(covid['date'])
+covid_date = pd.to_datetime(covid['date'])
+covid['day'] = covid_date.dt.day
+covid['month'] = covid_date.dt.month
+covid['year'] = covid_date.dt.year
+```
+
+```{python}
+covid_calc21 = covid_calc.loc[covid_calc['year'] == 2021]
+
+covid_calc21.groupby('state')['cases'].max().sort_values(ascending = False).nlargest(5).reset_index()['state']
+top5_states = covid_calc21.groupby('state')['cases'].max().sort_values(ascending = False).nlargest(5).reset_index()['state']
+
+covid_calc21['month'] = pd.Categorical(covid_calc21['month'], ordered=True, categories=[1, 2, 3])
+
+pn.ggplot.show(
+  pn.ggplot(covid_calc21.loc[covid_calc21['state'].isin(top5_states)], pn.aes('state', 'cases'))
+  + pn.geom_col(pn.aes(fill = 'factor(month)'), color = 'black')
+  + pn.coord_flip()
+  + pn.scale_fill_brewer(type = 'qual', labels = ['Jan', 'Feb', 'Mar'], guide = pn.guide_legend(reverse = True))
+  # + pn.scale_fill_discrete()
+  + pn.labs(y = 'Average Cases')
+  + pn.theme_light()
+  + pn.theme(axis_title_y = pn.element_blank(),
+            legend_title = pn.element_blank(),
+            legend_position = 'bottom')
+)
+```
+
+# Writing Functions
+
+
+```{python}
+def recode_month(x):
+  if x == 1:
+    return 'Jan'
+  elif x == 2:
+    return 'Feb'
+  elif x == 3:
+    return 'Mar'
+  elif x == 4:
+    return 'Apr'
+  elif x == 5:
+    return 'May'
+  elif x == 6:
+    return 'Jun'
+  elif x == 7:
+    return 'Jul'
+  elif x == 8:
+    return 'Aug'
+  elif x == 9:
+    return 'Sep'
+  elif x == 10:
+    return 'Oct'
+  elif x == 11:
+    return 'Nov'
+  elif x == 12:
+    return 'Dec'
+  else:
+    raise TypeError('Not a valid number of a month')
+
+recode_month(10)
+recode_month(13)
+
+covid['month_name'] = covid['month'].apply(recode_month)
+```
+
+```{python}
+
+month_cond = [
+  (covid['month'] == 1),
+  (covid['month'] == 2),
+  (covid['month'] == 3),
+  (covid['month'] == 4),
+  (covid['month'] == 5),
+  (covid['month'] == 6),
+  (covid['month'] == 7),
+  (covid['month'] == 8),
+  (covid['month'] == 9),
+  (covid['month'] == 10),
+  (covid['month'] == 11),
+  (covid['month'] == 12)
+]
+
+month_choice = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+covid['month_extra'] = np.select(month_cond, month_choice, default = object)
+covid.head()
+```
+
+```{python}
+def month_to_season_plot(df, month, plot = False):
+  
+  month_list = [
+    (df[month].isin(['Dec', 'Jan', 'Feb'])),
+    (df[month].isin(['Mar', 'Apr', 'May'])),
+    (df[month].isin(['Jun', 'Jul', 'Aug'])),
+    (df[month].isin(['Sep', 'Oct', 'Nov']))
+    ]
+  
+  season_list = ['Winter', 'Spring', 'Summer', 'Fall']
+  
+  df['season'] = np.select(month_list, season_list, default = object)
+  
+  df['season'] = pd.Categorical(df['season'], ordered = True, categories = ['Winter', 'Spring', 'Summer', 'Fall'])
+
+  if plot == True:
+    fig = pn.ggplot.show(
+            pn.ggplot(df, pn.aes('factor(season)'))
+            + pn.geom_bar()
+          )
+    return fig
+  
+  else:
+    return df
+```
+
+```{python}
+month_to_season_plot(df = covid, month = 'month_extra', plot = False)
+
+month_to_season_plot(df = covid, month = 'month_extra', plot = True)
+```
+
+```{python}
+from great_tables import GT
+
+(
+  GT(covid_sub.sort_values(['year', 'month_extra'], ascending = [True, True]))
+  .fmt_number(columns = ['cases', 'deaths'], use_seps = True, sep_mark = ',', drop_trailing_zeros = True)
+)
+```
+
+# Making Categories From Ranges
+
+```{python}
+# .le()
+# .lt()
+# .ge()
+# .gt()
+
+min_deaths = covid['deaths'].min()
+max_deaths = covid['deaths'].max()
+
+covid['death_cat'] = np.select(
+  
+  [covid['deaths'].between(min_deaths, 0, inclusive = 'left'),
+   covid['deaths'].between(0, 6, inclusive = 'left'),
+   covid['deaths'].between(6, max_deaths, inclusive = 'both')], 
+  ['low', 'med', 'high'],
+  default = object
+)
+```
+
+```{python}
+# filter across any column where there is an NA
+covid.loc[(covid.isna().any(axis = 1))].reset_index()
+
+fig_list = []
+
+for i in miss_state.values:
+  fig_list = pn.ggplot.show(
+    pn.ggplot(covid.loc[(covid['state'] == i) & (covid['month'] == 3)], pn.aes('day', 'cases'))
+    + pn.geom_col(fill = 'dodgerblue')
+    + pn.facet_wrap('year', scales = 'free')
+    + pn.labs(title = i)
+    + pn.theme_classic()
+  )
+
+fig_list[0]
+
+
+# useful
+#covid.groupby(['month', 'year'])['cases'].transform(lambda x: x.fillna(x.mean()))
+
+```
+
+```{python}
+covid['state2'] = np.where(covid['state'].isna(), 'miss', covid['state'])
+
+covid['state2'].value_counts()
+
+x = pd.get_dummies(covid['state2'], dtype = 'float')
+x = x.drop(columns = 'miss')
+x = sm.add_constant(x)
+
+results = sm.OLS(y, x).fit()
+results.summary()
+
+x2 = np.where(covid['state2'] == 'miss', 0, 1)
+x2 = sm.add_constant(x2)
+
+results2 = sm.OLS(y, x2).fit()
+results2.summary()
+```
+
+
+```{python}
+pn.ggplot.show(
+  pn.ggplot(cases_deaths, pn.aes('factor(state)', 'deaths'))
+  + pn.geom_col(pn.aes(fill = 'factor(state)'))
+  + pn.theme_light()
+  + pn.theme(legend_position = 'none')
+)
+
+sns.barplot(cases_deaths, x = 'state', y = 'deaths')
+plt.show()
+
+plt.clf()
+```
+
+
+```{python}
+nona = covid.dropna()
+
+# Not in
+nona[~nona['state'].isin(['CA', 'NY', 'TX', 'WY'])]
+
+# is in
+nona[nona['state'].isin(['CA', 'NY', 'TX', 'WY'])]
+```
+
+```{python}
+# randomly split data (don't do this for time data)
+random1 = covid.sample(frac = .5, random_state = 12345)
+
+covid.shape
+random1.shape
+
+random_join = covid.merge(random1, how = 'outer', indicator = True)
+random_join.head()
+
+random2 = random_join[random_join['_merge'] == 'left_only']
+
+random1.head()
+random2.head()
+```
