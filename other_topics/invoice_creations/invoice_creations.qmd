@@ -1,0 +1,13 @@
+---
+company: Posit
+name: Jonathan Andrew Pedroza
+specific_name: COHORT
+address: 13428 Tedemory Dr., Whittier, CA 90602
+issue_date: MM/DD/YYYY
+start_of_work: MM/DD/YYYY
+end_of_work: MM/DD/YYYY
+summary: Academy mentor weeks 0-2. 
+amount: $606
+format:
+  invoice-typst: default
+---
