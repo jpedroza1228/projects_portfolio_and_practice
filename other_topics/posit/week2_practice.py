@@ -10,14 +10,28 @@ pd.set_option('display.max_columns', None)
 pd.set_option('mode.copy_on_write', True)
 RcParams.update({'savefig.bbox': 'tight'}) # Keeps plotnine legend from being cut off
 
-
-# https://matplotlib.org/
-# https://plotly.com/python/
-
-covid = pd.read_csv(here('posit_python_cheatsheet/covid.csv'))
+covid = pd.read_csv(here('other_topics/posit/covid.csv'))
 
 covid.head()
 covid.info()
+
+(
+  covid
+  .loc[
+    covid['state']
+    .isin(['NY', 'CA', 'TX', 'WA', 'OR'])]['state']
+  .unique()
+)
+
+(
+  covid
+  .loc[
+    ~covid['state']
+    .isin(['NY', 'CA', 'TX', 'WA', 'OR'])]['state']
+  .unique()
+)
+
+
 
 covid['date2'] = pd.to_datetime(covid['date'])
 covid_ny = covid.loc[covid['state'] == 'NY']
