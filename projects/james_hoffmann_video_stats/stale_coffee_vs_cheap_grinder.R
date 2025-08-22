@@ -9,7 +9,7 @@ df <- tribble(
 )
 
 # 1 = better
-# n = 90
+# n ~ 90
 
 set.seed(1110)
 sample_df <- tibble(
@@ -176,7 +176,7 @@ gt::tab_header(
   title = 'Bayesian Model'
 ) |> 
   gt::tab_footnote(
-    footnote = "Reference = Stale Coffee"
+    footnote = "Reference: Stale Coffee"
   )
 
 # not really the focus, since these would hold variables at 0
