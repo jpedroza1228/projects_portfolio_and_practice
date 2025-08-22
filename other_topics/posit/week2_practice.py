@@ -15,6 +15,22 @@ covid = pd.read_csv(here('other_topics/posit/covid.csv'))
 covid.head()
 covid.info()
 
+covid['date2'] = pd.to_datetime(covid['date'])
+covid_ny = covid.loc[covid['state'] == 'NY']
+
+covid_ny.head()
+
+covid_ny_long = covid_ny.melt(id_vars = ['date2', 'state'], value_vars = ['cases', 'deaths'])
+
+pn.ggplot.show(
+  pn.ggplot(covid_ny_long, pn.aes('date2', 'value', color = 'variable'))
+  + pn.geom_line()
+  + pn.facet_wrap('variable', scales = 'free_y')
+  + pn.theme_light()
+  + pn.theme(axis_text_x = pn.element_text(rotation = 45, hjust = 1),
+             legend_position = 'none')
+)
+
 (
   covid
   .loc[
@@ -65,3 +81,6 @@ plt.clf()
 
 plt.plot(covid_ny['date2'], covid_ny['cases'])
 plt.plot(covid_ny['date2'], covid_ny['deaths'], linestyle = 'dashed')
+plt.show()
+
+plt.clf()
