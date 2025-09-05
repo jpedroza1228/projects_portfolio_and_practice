@@ -1,0 +1,939 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Surviving the Titanic\"\n",
+        "format: html\n",
+        "jupyter:\n",
+        "  kernelspec:\n",
+        "    display_name: Python 3\n",
+        "    language: python\n",
+        "    name: python3\n",
+        "---"
+      ],
+      "id": "6b41a822"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import plotnine as pn\n",
+        "from pyhere import here\n",
+        "from janitor import clean_names"
+      ],
+      "id": "e66479bd",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "train = pd.read_csv(here('projects/titanic/data', 'train.csv'))\n",
+        "train = train.clean_names(case_type = 'snake')\n",
+        "\n",
+        "test = pd.read_csv(here('projects/titanic/data', 'test.csv'))\n",
+        "test = test.clean_names(case_type = 'snake')"
+      ],
+      "id": "7fbd47e3",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "pclass_age = train[['pclass', 'age']].groupby(['pclass']).mean('age').reset_index()\n",
+        "pclass_age = pd.DataFrame(pclass_age)\n",
+        "\n",
+        "pclass_age.dtypes\n",
+        "\n",
+        "(\n",
+        "  pn.ggplot(pclass_age,pn.aes('factor(pclass)', 'age', fill = 'factor(pclass)'))\n",
+        "  + pn.geom_col(alpha = .7, position = 'dodge2')\n",
+        "  + pn.theme_light()\n",
+        "  + pn.theme(legend_position = 'none')\n",
+        ")"
+      ],
+      "id": "8c7e1c4b",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "\n",
+        "  pn.ggplot(train[['pclass', 'cabin']].groupby(['pclass', 'cabin']).value_counts().reset_index(), pn.aes('factor(pclass)', 'factor(cabin)'))\n",
+        "  + pn.geom_tile(pn.aes(fill = 'count'))\n",
+        "  + pn.facet_wrap('~pclass', scales = 'free')\n",
+        "  + pn.theme_light()\n",
+        ")\n",
+        "\n",
+        "#put cabins into groups based on the pclass"
+      ],
+      "id": "ae2961d7",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "class_cabin = train[['pclass', 'cabin']].groupby(['pclass', 'cabin']).value_counts().reset_index()\n",
+        "\n",
+        "class_cabin.loc[class_cabin['count'] > 1]\n",
+        "\n",
+        "class_cabin.loc[class_cabin['cabin'].str.contains('F E69')]"
+      ],
+      "id": "7ef95c1c",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# lifeboat_prob\n",
+        "sex_prop = train['sex'].value_counts().reset_index(drop = False)\n",
+        "\n",
+        "sex_total = sex_prop['count'].sum()\n",
+        "\n",
+        "sex_prop['percent'] = sex_prop['count']/sex_total*100\n",
+        "\n",
+        "print(sex_prop)"
+      ],
+      "id": "c6fbc4b3",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "def prob_create(data):\n",
+        "  if data['sex'] == 'female':\n",
+        "    if data['pclass'] == 1:\n",
+        "      return np.random.binomial(1, .7)\n",
+        "    elif data['pclass'] == 2:\n",
+        "      return np.random.binomial(1, .55)\n",
+        "    else:\n",
+        "      return np.random.binomial(1, .4)\n",
+        "  elif data['sex'] == 'male':\n",
+        "    if data['pclass'] == 1:\n",
+        "      return np.random.binomial(1, .3)\n",
+        "    elif data['pclass'] == 2:\n",
+        "      return np.random.binomial(1, .2)\n",
+        "    else:\n",
+        "      return np.random.binomial(1, .1)"
+      ],
+      "id": "fb863150",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "train['lifeboat'] = train.apply(prob_create, axis = 1)\n",
+        "\n",
+        "train.head()"
+      ],
+      "id": "d809a585",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "class_ticket = train[['pclass', 'ticket']].groupby(['pclass', 'ticket']).value_counts().reset_index()\n",
+        "\n",
+        "class_ticket.sort_values('count', ascending = False)\n",
+        "\n",
+        "class_ticket.loc[class_ticket['pclass'] == 1]"
+      ],
+      "id": "28ceef5f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train, pn.aes('pclass', 'fare'))\n",
+        "  + pn.geom_jitter()\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "f528d1b5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "variable = ['pclass', 'sex', 'sib_sp', 'parch', 'fare', 'embarked', 'lifeboat']\n",
+        "\n",
+        "for i in variable:\n",
+        "  var_counts = train[i].value_counts()\n",
+        "  print(var_counts)"
+      ],
+      "id": "5543459b",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train, pn.aes('sib_sp', 'parch'))\n",
+        "  + pn.geom_jitter(pn.aes(color = 'factor(pclass)'))\n",
+        "  + pn.facet_wrap('~pclass')\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "0f43f133",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "train = train.drop(['ticket', 'cabin', 'name', 'passenger_id'], axis = 1)"
+      ],
+      "id": "c7e759a9",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train, pn.aes('sib_sp'))\n",
+        "  + pn.geom_bar(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "b80073d3",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train, pn.aes('parch'))\n",
+        "  + pn.geom_bar(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "90302398",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "for i in train.columns:\n",
+        "  na_counts = train[i].isna().value_counts()\n",
+        "  print(na_counts)\n",
+        "\n",
+        "train['age'].isna().value_counts()"
+      ],
+      "id": "119677b7",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#from sklearn.experimental import enable_iterative_imputer\n",
+        "#from sklearn.impute import IterativeImputer\n",
+        "from sklearn.impute import SimpleImputer\n",
+        "\n",
+        "mod_var = ['age', 'sib_sp', 'parch', 'fare']\n",
+        "\n",
+        "train_mean = SimpleImputer(missing_values = np.nan, strategy = 'mean').set_output(transform = 'pandas')\n",
+        "train_mean.fit(train[mod_var])\n",
+        "train_imp = train_mean.transform(train[mod_var])\n",
+        "\n",
+        "train_cat_var = ['survived', 'pclass', 'lifeboat', 'sex', 'embarked']\n",
+        "\n",
+        "train_freq = SimpleImputer(missing_values = np.nan, strategy = 'most_frequent').set_output(transform = 'pandas')\n",
+        "train_freq.fit(train[train_cat_var])\n",
+        "train_imp_cat = train_freq.transform(train[train_cat_var])\n",
+        "\n",
+        "print(train_imp.columns)\n",
+        "print(train_imp_cat.columns)\n",
+        "\n",
+        "train_imp = train_imp.join(train_imp_cat)"
+      ],
+      "id": "8662d4e0",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train_imp, pn.aes('age', 'fare'))\n",
+        "  + pn.geom_point(pn.aes(color = 'factor(sex)'))\n",
+        "  + pn.geom_smooth(method = 'lm', se = False)\n",
+        "  + pn.facet_wrap('~lifeboat')\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "6eade48d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "(\n",
+        "  pn.ggplot(train_imp, pn.aes('sib_sp', 'parch', color = 'age'))\n",
+        "  + pn.geom_point(alpha = .5, position = pn.position_jitter())\n",
+        "  + pn.facet_wrap('~survived')\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "5834f514",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Start Modeling\n"
+      ],
+      "id": "eaa75c51"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "target = train_imp['survived']\n",
+        "features = train_imp[['pclass', 'age', 'sib_sp', 'parch', 'fare', 'sex', 'embarked', 'lifeboat']]\n",
+        "\n",
+        "features = pd.get_dummies(features, columns = ['pclass', 'sex', 'embarked'], prefix = '', prefix_sep = '')\n",
+        "\n",
+        "features = features.rename(columns = {'1': 'poor', '2': 'med', '3': 'rich'})"
+      ],
+      "id": "68dc5ae5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "feat_good = features[['age', 'sib_sp', 'parch', 'fare', 'lifeboat']]\n",
+        "feat_sub = features[[ 'poor', 'med', 'rich', 'female', 'male', 'C', 'Q', 'S']]\n",
+        "\n",
+        "for i in feat_sub.columns:\n",
+        "    feat_sub[i] = feat_sub[i].apply(lambda x: 1 if x else 0)\n",
+        "print(feat_sub)"
+      ],
+      "id": "49f84445",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "features = feat_good.join(feat_sub)\n",
+        "\n",
+        "# features = features.drop(['poor', 'female', 'C'], axis = 1)\n",
+        "\n",
+        "features.head()\n",
+        "\n",
+        "target = target.astype(str).astype(int)\n",
+        "\n",
+        "features['lifeboat'] = features['lifeboat'].astype(str).astype(int)"
+      ],
+      "id": "5a4a9d6f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "target_classes = target.value_counts()\n",
+        "target_classes_wt = target_classes.max()/target_classes.min()\n",
+        "target_classes_wt = np.round(target_classes_wt, 2)\n",
+        "\n",
+        "print(target_classes_wt)"
+      ],
+      "id": "5b3a65b4",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "from sklearn.ensemble import RandomForestClassifier as rfc\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.metrics import accuracy_score, roc_auc_score, mean_absolute_error, roc_curve, make_scorer, log_loss\n",
+        "from sklearn.model_selection import GridSearchCV\n",
+        "\n",
+        "x_train, x_test, y_train, y_test = train_test_split(features, target, test_size = .25, stratify = target, random_state = 12345)"
+      ],
+      "id": "f0b6ca59",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "rf_model = rfc(n_estimators = 1000, criterion = 'log_loss', max_depth = 10, min_samples_split = 2, bootstrap = False, random_state = 12345, verbose = 1, n_jobs = 100) #class_weight = {0: target_classes_wt, 1: 1}, "
+      ],
+      "id": "b9543a83",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "rf_mod = rf_model.fit(x_train, y_train)"
+      ],
+      "id": "11a6a453",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "pred = rf_model.predict(x_test)\n",
+        "pred = pd.Series(pred)"
+      ],
+      "id": "87c0a9bd",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "from sklearn.inspection import permutation_importance\n",
+        "\n",
+        "single_important = permutation_importance(rf_mod, x_train, y_train, random_state = 12345)"
+      ],
+      "id": "1c7b4e50",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "single_mod_import = pd.Series(rf_mod.feature_importances_, index = features.columns).reset_index().rename({'index': 'columns', 0: 'scores'}, axis = 'columns')\n",
+        "\n",
+        "(\n",
+        "  pn.ggplot(single_mod_import, pn.aes('factor(columns)', 'scores'))\n",
+        "  + pn.geom_col(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.coord_flip()\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "66d3964e",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "single_important_series = pd.Series(single_important.importances_mean, index = features.columns)\n",
+        "single_important_df = single_important_series.reset_index()\n",
+        "single_important_df = single_important_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')\n",
+        "\n",
+        "print(single_important_df)\n",
+        "\n",
+        "(\n",
+        "  pn.ggplot(single_important_df, pn.aes('factor(columns)', 'scores'))\n",
+        "  + pn.geom_col(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.coord_flip()\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "6be2ac6f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "print('Mean Absolute Error is', mean_absolute_error(y_test, pred))\n",
+        "\n",
+        "print('Accuracy is', accuracy_score(y_test, pred))\n",
+        "\n",
+        "print('ROC AUC score is', roc_auc_score(y_test, pred))\n",
+        "\n",
+        "print('Log loss is', log_loss(y_test, pred))"
+      ],
+      "id": "48414cad",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "from sklearn.model_selection import KFold, GridSearchCV\n",
+        "from sklearn.model_selection import GridSearchCV\n",
+        "\n",
+        "folds = KFold(5)\n",
+        "\n",
+        "rf_grid_model = rfc(criterion = 'log_loss', min_samples_split = 2, bootstrap = True, random_state = 12345, verbose = 1, n_jobs = 100) \n",
+        "\n",
+        "params = {'n_estimators': [100, 500, 1000, 2000, 5000], 'min_samples_split': [2, 3, 4, 5], 'max_depth': [3, 5, 7]}\n",
+        "\n",
+        "grid = GridSearchCV(rf_grid_model, params, cv = folds, verbose = 1)\n",
+        "\n",
+        "grid.fit(x_train, y_train)"
+      ],
+      "id": "71fc85ae",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "print(grid.best_score_)\n",
+        "\n",
+        "print(grid.best_params_)\n",
+        "\n",
+        "print(grid.best_estimator_)"
+      ],
+      "id": "8f8f659d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "best_rf = rfc(criterion='log_loss', max_depth=7, min_samples_split=5,\n",
+        "                       n_estimators=5000, n_jobs=100, random_state=12345,\n",
+        "                       verbose=1)\n",
+        "\n",
+        "best_rf.fit(x_train, y_train)"
+      ],
+      "id": "8086aefc",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "best_pred = best_rf.predict(x_test)\n",
+        "best_pred = pd.Series(best_pred)"
+      ],
+      "id": "ee920c56",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "best_important = permutation_importance(best_rf, x_train, y_train, random_state = 12345)"
+      ],
+      "id": "0d950f70",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "best_single_mod_import = pd.Series(best_rf.feature_importances_, index = features.columns).reset_index().rename({'index': 'columns', 0: 'scores'}, axis = 'columns')\n",
+        "\n",
+        "(\n",
+        "  pn.ggplot(best_single_mod_import, pn.aes('factor(columns)', 'scores'))\n",
+        "  + pn.geom_col(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.coord_flip()\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "8034f50c",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "best_important_series = pd.Series(best_important.importances_mean, index = features.columns)\n",
+        "best_important_df = best_important_series.reset_index()\n",
+        "best_important_df = best_important_df.rename({'index': 'columns', 0: 'scores'}, axis = 'columns')\n",
+        "\n",
+        "print(best_important_df)\n",
+        "\n",
+        "(\n",
+        "  pn.ggplot(best_important_df, pn.aes('factor(columns)', 'scores'))\n",
+        "  + pn.geom_col(fill = 'dodgerblue', color = 'black')\n",
+        "  + pn.coord_flip()\n",
+        "  + pn.theme_light()\n",
+        ")"
+      ],
+      "id": "225d95cd",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "print('Mean Absolute Error is', mean_absolute_error(y_test, best_pred))\n",
+        "\n",
+        "print('Accuracy is', accuracy_score(y_test, best_pred))\n",
+        "\n",
+        "print('ROC AUC score is', roc_auc_score(y_test, best_pred))\n",
+        "\n",
+        "print('Log loss is', log_loss(y_test, best_pred))"
+      ],
+      "id": "2aff62d9",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Neural Network\n"
+      ],
+      "id": "4ab166ea"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import tensorflow as tf\n",
+        "from tensorflow import keras\n",
+        "# import keras_tuner as kt\n",
+        "\n",
+        "target_nn_train = np.array(y_train).reshape(-1, 1)\n",
+        "target_nn_test = np.array(y_test).reshape(-1, 1)\n",
+        "features_nn_train = np.array(x_train)\n",
+        "features_nn_test = np.array(x_test)\n",
+        "\n",
+        "nn_metrics = [ \\\n",
+        "  keras.metrics.BinaryAccuracy(name = 'accuracy'),\n",
+        "  keras.metrics.AUC(name = 'auc')\n",
+        "]"
+      ],
+      "id": "a8c1b6c8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "def build_and_compile_model(layer_num):\n",
+        "  model = tf.keras.models.Sequential([\n",
+        "    tf.keras.layers.Dense(units = layer_num, activation = 'relu'),\n",
+        "    tf.keras.layers.Dense(units = 1, activation = None)\n",
+        "  ])\n",
+        "  \n",
+        "  model.compile(\n",
+        "    loss='mean_absolute_error',\n",
+        "    optimizer=tf.keras.optimizers.AdamW(0.001),\n",
+        "    metrics = nn_metrics\n",
+        "    )\n",
+        "  return model\n",
+        "\n",
+        "nn_model = build_and_compile_model(7)\n",
+        "\n",
+        "nn_model.fit(\n",
+        "  features_nn_train,\n",
+        "  target_nn_train,\n",
+        "  validation_split = .2,\n",
+        "  verbose = 3,\n",
+        "  epochs = 1000\n",
+        ")"
+      ],
+      "id": "449e106b",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "nn_predict = nn_model.predict(features_nn_test)\n",
+        "nn_results = nn_model.evaluate(features_nn_test, target_nn_test, verbose = 3)\n",
+        "#nn_results shows the loss metric (MAE), accuracy, then roc_auc"
+      ],
+      "id": "6e58858e",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "print('The Mean Absolute Error is ', nn_results[0], '.', '\\n', 'While the Accuracy is ', nn_results[1], '.', '\\n', 'The ROC AUC Score is ', nn_results[2], '.')\n",
+        "\n",
+        "print(log_loss(target_nn_test, nn_predict))"
+      ],
+      "id": "257d856f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "# pred_bi = np.select( \\\n",
+        "#   [ \\\n",
+        "#     pred.between(0, .5, inclusive = 'both'),\n",
+        "#     pred.between(.5, 1, inclusive = 'right')\n",
+        "#   ], \\\n",
+        "#   [ \\\n",
+        "#     0, 1\n",
+        "#   ]\n",
+        "# )\n",
+        "\n",
+        "#XGBoost Model\n",
+        "from sklearn.ensemble import HistGradientBoostingRegressor\n",
+        "\n",
+        "hist_grad_model = HistGradientBoostingRegressor(\n",
+        "  random_state = 12345, \\\n",
+        "  verbose = 3,\n",
+        "  learning_rate = .001,\n",
+        "  max_iter = 1000\n",
+        "  )\n",
+        "\n",
+        "grad_param_grid = {'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10]}\n",
+        "\n",
+        "grad_grid = GridSearchCV( \\\n",
+        "  hist_grad_model, \\\n",
+        "  grad_param_grid, \\\n",
+        "  refit = True,\n",
+        "  verbose = 3\n",
+        ")\n",
+        "\n",
+        "grad_grid.fit(x_train, y_train)\n",
+        "\n",
+        "print(grad_grid.cv_results_)\n",
+        "print(grad_grid.best_score_)\n",
+        "print(grad_grid.best_params_)\n",
+        "print(grad_grid.best_estimator_)\n",
+        "\n",
+        "from sklearn.metrics import mean_squared_error, roc_curve\n",
+        "\n",
+        "grad_pred = grad_grid.predict(x_train)\n",
+        "grad_pred = pd.Series(grad_pred)\n",
+        "\n",
+        "mae = mean_absolute_error(y_train, grad_pred)\n",
+        "\n",
+        "grad_pred_bi = np.select( \\\n",
+        "  [ \\\n",
+        "    grad_pred.between(0, .5, inclusive = 'both'),\n",
+        "    grad_pred.between(.5, 1, inclusive = 'right')\n",
+        "  ], \\\n",
+        "  [ \\\n",
+        "    0, 1\n",
+        "  ]\n",
+        ")\n",
+        "\n",
+        "print('SVM mean absolute error was', mae_svm, '.', 'Compared to the histogram gradient boosting algoirhtm, which had an MAE of', mae)\n",
+        "\n",
+        "print('Accuracy for the SVM was', accuracy_score(y_train, pred_bi), 'compared to the Gradient Boost\\'s Accuracy of', accuracy_score(y_train, grad_pred_bi))\n",
+        "\n",
+        "from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix\n",
+        "\n",
+        "svm_confuse = confusion_matrix(y_train, pred_bi)\n",
+        "grad_confuse = confusion_matrix(y_train, grad_pred_bi)\n",
+        "\n",
+        "svm_disp = ConfusionMatrixDisplay(confusion_matrix = svm_confuse, display_labels = grid.classes_)\n",
+        "# does not work because of the classes\n",
+        "# grad_disp = ConfusionMatrixDisplay(confusion_matrix = grad_confuse, display_labels = grad_grid.classes_)\n",
+        "\n",
+        "import matplotlib.pyplot as plt\n",
+        "svm_disp.plot()\n",
+        "plt.show()\n",
+        "\n",
+        "grad_disp.plot()\n",
+        "plt.show()\n",
+        "\n",
+        "print('ROC AUC was', roc_auc_score(y_train, pred_bi), 'for SVM and ', roc_auc_score(y_train, grad_pred), 'for Gradient Boost')"
+      ],
+      "id": "dc086db5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Testing\n"
+      ],
+      "id": "977ce43c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "for i in test.columns:\n",
+        "  print(test[i].isna().value_counts())\n",
+        "\n",
+        "test_var = ['fare', 'parch', 'sib_sp', 'age']\n",
+        "\n",
+        "test_mean = SimpleImputer(missing_values = np.nan, strategy = 'mean').set_output(transform = 'pandas')\n",
+        "test_mean.fit(test[test_var])\n",
+        "test_imp = test_mean.transform(test[test_var])\n",
+        "\n",
+        "test_imp['fare'].isna().value_counts()\n",
+        "test_imp['age'].isna().value_counts()\n",
+        "\n",
+        "test_cat_var = ['passenger_id', 'pclass', 'name', 'sex', 'ticket', 'embarked']\n",
+        "\n",
+        "test_freq = SimpleImputer(missing_values = np.nan, strategy = 'most_frequent').set_output(transform = 'pandas')\n",
+        "test_freq.fit(test[test_cat_var])\n",
+        "test_imp_cat = test_freq.transform(test[test_cat_var])\n",
+        "\n",
+        "\n",
+        "test_imp.join(test_imp_cat).shape\n",
+        "test_imp = test_imp.join(test_imp_cat)\n",
+        "\n",
+        "train_imp['fare_cat'] = pd.qcut(train_imp['fare'], 5, labels = ['1', '2', '3', '4', '5'])\n",
+        "\n",
+        "\n",
+        "test_imp['age_group'] = np.select( \\\n",
+        "  [ \\\n",
+        "    test_imp['age'].between(0, 13, inclusive = 'left'),\n",
+        "    test_imp['age'].between(13, 20, inclusive = 'left'),\n",
+        "    test_imp['age'].between(20, 30, inclusive = 'left'),\n",
+        "    test_imp['age'].between(30, 40, inclusive = 'left'),\n",
+        "    test_imp['age'].between(40, 50, inclusive = 'left'),\n",
+        "    test_imp['age'].between(50, 60, inclusive = 'left'),\n",
+        "    test_imp['age'].between(60, 70, inclusive = 'left'),\n",
+        "    test_imp['age'].between(70, 100, inclusive = 'both')\n",
+        "  ], \\\n",
+        "  [ \\\n",
+        "    'age1', 'age2', 'age3', 'age4', 'age5', 'age6', 'age7', 'age8' \\\n",
+        "  ] \\\n",
+        ")\n",
+        "\n",
+        "# target_test = test_imp[]\n",
+        "features_test = test_imp[['pclass', 'age_group', 'sib_sp', 'parch', 'fare', 'passenger_id', 'name', 'sex', 'ticket', 'embarked']]\n",
+        "\n",
+        "features_test = pd.get_dummies(features_test, columns = ['pclass', 'sex', 'age_group', 'embarked'], prefix = '', prefix_sep = '')\n",
+        "\n",
+        "features_test = features_test.rename(columns = {'1': 'pclass1', '2': 'pclass2', '3': 'pclass3'})\n",
+        "\n",
+        "# features_test = features_test.drop(['name', 'passenger_id'], axis = 1)\n",
+        "# features_test.head()\n",
+        "\n",
+        "feat_sub_test = features_test.iloc[:, np.r_[6:22]] # similar to the following code features.loc[features.index, features.columns[np.r_[7:162]]]\n",
+        "feat_good_test = features_test.iloc[:, np.r_[0:5]]\n",
+        "\n",
+        "\n",
+        "for i in feat_sub_test.columns:\n",
+        "    feat_sub_test[i] = feat_sub_test[i].apnly(lambda x: 1 if x else 0)\n",
+        "print(feat_sub_test)\n",
+        "\n",
+        "\n",
+        "features_test = feat_sub_test.join(feat_good_test)\n",
+        "\n",
+        "train_imp['embarked'].value_counts()\n",
+        "\n",
+        "features_test['female_age2'] = features_test['female'] * features_test['age2']\n",
+        "features_test['female_age3'] = features_test['female'] * features_test['age3']\n",
+        "features_test['female_age4'] = features_test['female'] * features_test['age4']\n",
+        "features_test['female_age5'] = features_test['female'] * features_test['age5']\n",
+        "features_test['female_age6'] = features_test['female'] * features_test['age6']\n",
+        "features_test['female_age7'] = features_test['female'] * features_test['age7']\n",
+        "features_test['female_age8'] = features_test['female'] * features_test['age8']\n",
+        "\n",
+        "features_test = features_test.drop(['male', 'pclass1', 'age1', 'S'], axis = 1)\n",
+        "features_test = features_test.round(3)\n",
+        "\n",
+        "# target_classes = target.value_counts()\n",
+        "# target_classes_wt = target_classes.max()/target_classes.min()\n",
+        "# target_classes_wt = np.round(target_classes_wt, 2)\n",
+        "\n",
+        "sub = pd.read_csv(here('kaggle/titanic/gender_submission.csv'))\n",
+        "sub = sub.clean_names(case_type = 'snake')\n",
+        "\n",
+        "features_test = features_test.merge(sub, on = 'passenger_id') # merge is similar to join in R\n",
+        "\n",
+        "target_test = features_test['survived']\n",
+        "mod_feat_test = features_test.drop(['name'], axis = 1)\n",
+        "\n",
+        "\n",
+        "nn_test = build_and_compile_model()\n",
+        "\n",
+        "nn_test.fit(\n",
+        "  mod_feat_test,\n",
+        "  target_test,\n",
+        "  validation_split = 0,\n",
+        "  verbose = 3,\n",
+        "  epochs = 100\n",
+        ")\n",
+        "\n",
+        "nn_pred_test = nn_test.predict(mod_feat_test)\n",
+        "nn_results_test = nn_test.evaluate(mod_feat_test, target_test, verbose = 3)\n",
+        "\n",
+        "nn_pred_test = nn_pred_test.flatten() # same as this code: nn_pred_test.reshape(-1)\n",
+        "nn_pred_test = pd.Series(nn_pred_test)\n",
+        "\n",
+        "prob_test_bi = np.select( \\\n",
+        "  [ \\\n",
+        "    nn_pred_test.between(0, .5, inclusive = 'both'),\n",
+        "    nn_pred_test.between(.5, 1, inclusive = 'right')\n",
+        "  ], \\\n",
+        "  [ \\\n",
+        "    0, 1\n",
+        "  ]\n",
+        ")\n",
+        "\n",
+        "print(mean_absolute_error(target_test, prob_test_bi))\n",
+        "print(accuracy_score(target_test, prob_test_bi))\n",
+        "print(roc_auc_score(target_test, prob_test_bi))"
+      ],
+      "id": "c9a916b8",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

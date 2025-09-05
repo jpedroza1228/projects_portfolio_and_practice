@@ -1,0 +1,526 @@
+---
+title: "Bayesian Network Creation"
+subtitle: "W/ Simulated Data'"
+author: Jonathan A Pedroza
+format: html
+---
+
+```{python}
+# Do not print warnings
+# import logging
+# from pgmpy.global_vars import logger
+# logger.setLevel(logging.ERROR)
+
+import seaborn as sns
+import numpy as np
+import pandas as pd
+from matplotlib import rcParams
+
+pd.set_option('display.max_columns', None)
+pd.options.mode.copy_on_write = True
+rcParams.update({'savefig.bbox': 'tight'}) # Keeps plotnine legend from being cut off
+
+np.random.seed(81425)
+probs = np.random.rand(250, 9)
+
+# Generate outcomes for each item using those probabilities
+np.random.seed(81425)
+outcomes = np.random.binomial(n = 1, p = probs)
+
+# Convert to DataFrame
+df = pd.DataFrame(outcomes, columns=[f"item_{i+1}" for i in range(9)])
+
+df.head()
+
+q = pd.DataFrame({
+  'att1': [1, 1, 1, 1, 1, 1, 1, 1, 1],
+  'att2': [0, 0, 0, 1, 1, 1, 0, 0 ,0],
+  'att3': [0, 0, 0, 0, 0, 0, 1, 1, 1]})
+
+df.head()
+q.head()
+
+alpha = pd.DataFrame([(x, y, z) for x in range(2) for y in range(2) for z in range(2)])
+alpha = alpha.rename(columns = {0: 'att1', 1: 'att2', 2: 'att3'})
+
+```
+
+# Sample of 60
+
+```{python}
+#| eval: false
+#| echo: true
+
+np.random.seed(81425)
+probs = np.random.rand(60, 9)
+
+# Generate outcomes for each item using those probabilities
+np.random.seed(81425)
+outcomes = np.random.binomial(n = 1, p = probs)
+
+# Convert to DataFrame
+df = pd.DataFrame(outcomes, columns=[f"item_{i+1}" for i in range(9)])
+
+df.head()
+
+q = pd.DataFrame({
+  'att1': [1, 1, 1, 0, 0, 0, 0, 0, 0],
+  'att2': [0, 0, 0, 1, 1, 1, 0, 0 ,0],
+  'att3': [0, 0, 0, 0, 0, 0, 1, 1, 1]})
+
+df.head()
+q.head()
+
+alpha = pd.DataFrame([(x, y, z) for x in range(2) for y in range(2) for z in range(2)])
+alpha = alpha.rename(columns = {0: 'att1', 1: 'att2', 2: 'att3'})
+```
+
+
+# Sample of 250
+
+```{python}
+
+stan_dict = {
+  'J': df.shape[0],
+  'I': df.shape[1],
+  'K': q.shape[1],
+  'C': alpha.shape[0],
+  'Y': np.array(df),
+  'Q': np.array(q), 
+  'alpha': np.array(alpha)
+}
+```
+
+```{python}
+import os
+from cmdstanpy import CmdStanModel
+import arviz as az
+import matplotlib.pyplot as plt
+
+stanfile = os.path.join('/home/jon/Documents/github_repos/projects_portfolio_and_practice/projects/dcm/lcdm_py/bayes_net_simulation.stan')
+
+stan_model = CmdStanModel(stan_file = stanfile, cpp_options={'STAN_THREADS': 'TRUE'})
+```
+
+```{python}
+np.random.seed(81425)
+fit = stan_model.sample(data= stan_dict, show_progress = True, chains = 4)
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+# import pickle
+
+# with open('model.pkl', 'wb') as f:
+#   pickle.dump([stan_model, fit], f, protocol = -1)
+```
+
+```{python}
+#| label: 'inference data'
+#| echo: false
+#| eval: true
+
+cmdstanpy_data = az.from_cmdstanpy(
+    posterior = fit,
+    posterior_predictive = 'Y_rep',
+    observed_data = {'y': stan_dict['Y']},
+    log_likelihood = 'log_item',
+    coords = {"student": np.arange(stan_dict['J'])}
+)
+cmdstanpy_data
+```
+
+```{python}
+(
+  fit.summary()['R_hat']
+  .sort_values(ascending = False)
+)
+```
+
+```{python}
+print(fit.summary())
+print(fit.diagnose())
+```
+
+```{python}
+post_df = fit.draws_pd()
+
+post_df.columns.tolist()
+```
+
+## Visuals
+
+### Trace Plots
+
+```{python}
+#| eval: false
+#| echo: true
+
+az.plot_trace(fit, var_names = ('pi'))
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+az.plot_trace(fit, var_names = ('prob_resp_attr'))
+# plt.show()
+# plt.clf()
+```
+
+### Forest Plots
+
+```{python}
+az.plot_forest(fit, var_names = ('theta1'), colors = 'seagreen')
+```
+
+```{python}
+az.plot_forest(fit, var_names = ('theta2'), colors = 'seagreen')
+```
+
+```{python}
+az.plot_forest(fit, var_names = ('theta3'), colors = 'seagreen')
+```
+
+```{python}
+az.plot_forest(fit, var_names = ('pi'), colors = 'seagreen')
+```
+
+```{python}
+az.plot_forest(fit, var_names = ('prob_resp_class'), colors = 'seagreen')
+```
+
+```{python}
+az.plot_forest(fit, var_names = ('prob_resp_attr'), colors = 'seagreen')
+```
+
+### Additional Plots
+
+```{python}
+az.plot_posterior(fit, var_names = ('Y_rep'), hdi_prob = 0.8)
+```
+
+# Left Over Code
+
+```{python}
+#| eval: false
+#| echo: true
+
+stu_att_mastery = pd.DataFrame({
+  'parameters': post_df.filter(regex = '^prob_resp_attr').columns,
+  'mean': post_df.filter(regex = '^prob_resp_attr').mean().reset_index(drop = True)
+})
+
+stu_att_mastery[['drop', 'other']] = stu_att_mastery['parameters'].str.split(pat = '[', expand = True)
+stu_att_mastery[['id', 'att']] = stu_att_mastery['other'].str.split(pat = ',', expand = True)
+stu_att_mastery['att'] = stu_att_mastery['att'].str.replace(']', '')
+
+stu_att_mastery = stu_att_mastery.drop(columns = ['parameters', 'drop', 'other'])
+
+stu_att_mastery['id'] = stu_att_mastery['id'].astype(int)
+
+stu_att_mastery = (
+  stu_att_mastery
+  .pivot(index = 'id', columns = 'att', values = 'mean')
+  .reset_index()
+  .sort_values(by = 'id')
+)
+
+stu_att_mastery['att1'] = pd.Series(np.where(stu_att_mastery['1'] >= .5, 1, 0))
+stu_att_mastery['att2'] = pd.Series(np.where(stu_att_mastery['2'] >= .5, 1, 0))
+stu_att_mastery['att3'] = pd.Series(np.where(stu_att_mastery['3'] >= .5, 1, 0))
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+for i in ['att1', 'att2', 'att3']:
+  print(stu_att_mastery[i].value_counts(normalize = True))
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+observed_y = {'y': np.array(y)}
+posterior_y = {'y': np.array(y_rep)}
+
+compare_dict = az.from_dict(
+  observed_data = observed_y,
+  posterior_predictive = posterior_y
+)
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+# az.plot_ppc(compare_dict, data_pairs = {'y': 'y'}, num_pp_samples = 50)
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+# az.plot_bpv(compare_dict, kind='t_stat', t_stat = '.5')
+```
+
+# Simulated Data
+
+```{python}
+#| eval: false
+#| echo: true
+
+y = pd.DataFrame(stan_dict['Y'])
+
+y.columns = [f'item_{i+1}' for i in range(9)]
+
+y_rep = post_df.filter(regex = '^Y_rep')
+
+print(y.head())
+print(y_rep.head())
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+y_count = []
+
+for i in range(y_rep.shape[1]):
+  counts = y_rep.iloc[i].value_counts(normalize = True)
+  y_count.append(counts)
+
+print(y_count)
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+yrep_prob = pd.DataFrame({
+  'mean': y_rep.mean()
+}).reset_index()
+
+yrep_prob['correct'] = np.where(yrep_prob['mean'] >= .5, 1, 0)
+
+yrep_prob[['drop', 'other']] = yrep_prob['index'].str.split(pat = '[', expand = True)
+yrep_prob[['id', 'item']] = yrep_prob['other'].str.split(pat = ',', expand = True)
+yrep_prob['item'] = yrep_prob['item'].str.replace(']', '')
+
+yrep_prob = yrep_prob.drop(columns = ['drop', 'other', 'index', 'mean'])
+
+yrep_prob['id'] = yrep_prob['id'].astype(int)
+
+yrep_prob.head()
+```
+
+```{python}
+#| eval: false
+#| echo: true
+
+yrep_wide = (
+  yrep_prob
+  .pivot(
+    index = 'id',
+    columns = 'item',
+    values = 'correct')
+  .reset_index(drop = True)
+)
+
+yrep_wide.columns = [f'item_{i+1}' for i in range(9)]
+
+yrep_wide = yrep_wide.reset_index()
+
+yrep_wide.head()
+```
+
+ Need to double check. This is for pattern type reliability
+
+```{python}
+#| eval: false
+#| echo: true
+
+stu_class_df = post_df.filter(regex = '^prob_resp_class')
+
+# Posterior mean across draws
+post_mean = stu_class_df.mean().reset_index()
+
+post_mean[['drop', 'other']] = post_mean['index'].str.split(pat = '[', expand = True)
+post_mean[['id', 'lat_class']] = post_mean['other'].str.split(',', expand = True)
+post_mean['lat_class'] = post_mean['lat_class'].str.replace(']', '')
+
+post_mean['avg_prob'] = post_mean.iloc[:,1]
+
+post_mean = post_mean[['id', 'lat_class', 'avg_prob']]
+post_mean['id'] = post_mean['id'].astype(int)
+
+max_prob = post_mean.groupby('id')['avg_prob'].max().reset_index()
+max_prob = max_prob.rename(columns = {'avg_prob': 'max_prob'})
+
+print(post_mean.head())
+```
+
+```{python}
+class_prob_join = post_mean.merge(max_prob)
+
+print(
+  class_prob_join
+  .loc[class_prob_join['avg_prob'] == class_prob_join['max_prob']]
+  .sort_values('id')
+  .round(2)
+  .value_counts('lat_class')
+)
+
+print(
+  class_prob_join
+  .loc[(class_prob_join['avg_prob'] == class_prob_join['max_prob'])]
+  .loc[class_prob_join['max_prob'] < .5]
+  .sort_values('max_prob')
+)
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+# Probability of assigned class
+picked_prob = post_mean[np.arange(post_mean.shape[0]), map_class]
+
+# Overall pattern reliability
+PR_overall = picked_prob.mean()
+
+# Pattern reliability per class
+classes = np.unique(map_class)
+PR_by_class = {int(c): picked_prob[map_class == c].mean() for c in classes}
+
+print(f"Overall pattern reliability: {PR_overall:.3f}")
+print("Pattern reliability by class:", PR_by_class)
+
+# Compute PR_overall per draw
+drawwise_PR = []
+for draw in prob_resp_class:
+    map_class_draw = np.argmax(draw, axis=1)
+    picked_prob_draw = draw[np.arange(draw.shape[0]), map_class_draw]
+    drawwise_PR.append(picked_prob_draw.mean())
+
+drawwise_PR = np.array(drawwise_PR)
+print("Mean:", drawwise_PR.mean(), "2.5%:", np.percentile(drawwise_PR, 2.5), "97.5%:", np.percentile(drawwise_PR, 97.5))
+
+```
+
+This is for bayesian predictive p values
+
+```{python}
+# Extract observed data and replicated data from Stan
+y_obs = fit.stan_variable("y_obs")  # If stored in generated quantities
+y_rep = fit.stan_variable("y_rep")  # shape: (draws, J, I)
+
+def chi_sq_stat(y, p_hat):
+    # Avoid log(0) issues
+    p_hat = np.clip(p_hat, 1e-9, 1-1e-9)
+    return np.sum((y - p_hat)**2 / (p_hat * (1 - p_hat)))
+
+# Precompute observed stat
+# Here p_hat for observed data comes from posterior mean pi
+pi = fit.stan_variable("pi")  # shape: (draws, I, C) or (I, C)
+# If needed, average over classes weighted by nu for each person
+# Example: just use observed mean probability
+p_hat_obs = y_obs.mean(axis=0)
+T_obs = chi_sq_stat(y_obs, p_hat_obs)
+
+# Compute replicated stats per draw
+T_rep = []
+for draw in y_rep:
+    p_hat_rep = draw.mean(axis=0)
+    T_rep.append(chi_sq_stat(draw, p_hat_rep))
+
+T_rep = np.array(T_rep)
+
+# Bayesian predictive p-value
+BPP = np.mean(T_rep >= T_obs)
+
+print(f"Bayesian Predictive p-value: {BPP:.3f}")
+
+```
+
+Attribute style reliability
+
+```{python}
+# Extract posterior draws: shape = (draws, J, K)
+prob_resp_attr = fit.stan_variable("prob_resp_attr")
+
+# Posterior mean probability for each person x attribute
+post_mean_attr = prob_resp_attr.mean(axis=0)  # shape: J x K
+
+# Predicted mastery state (0 or 1)
+pred_mastery = (post_mean_attr >= 0.5).astype(int)
+
+# Attribute reliability (mean posterior probability of predicted state)
+attr_reliability = []
+for k in range(post_mean_attr.shape[1]):  # loop over attributes
+    probs_k = post_mean_attr[:, k]
+    pred_state_k = pred_mastery[:, k]
+    # If predicted mastered, take p; if predicted not mastered, take 1-p
+    picked_probs = np.where(pred_state_k == 1, probs_k, 1 - probs_k)
+    attr_reliability.append(picked_probs.mean())
+
+attr_reliability = np.array(attr_reliability)
+print("Attribute reliability per skill:", attr_reliability)
+
+
+drawwise_attr_reliability = []
+
+for draw in prob_resp_attr:  # shape: J x K for one draw
+    pred_state = (draw >= 0.5).astype(int)
+    rel_per_attr = []
+    for k in range(draw.shape[1]):
+        probs_k = draw[:, k]
+        picked_probs = np.where(pred_state[:, k] == 1, probs_k, 1 - probs_k)
+        rel_per_attr.append(picked_probs.mean())
+    drawwise_attr_reliability.append(rel_per_attr)
+
+drawwise_attr_reliability = np.array(drawwise_attr_reliability)  # shape: draws x K
+mean_rel = drawwise_attr_reliability.mean(axis=0)
+ci_lower = np.percentile(drawwise_attr_reliability, 2.5, axis=0)
+ci_upper = np.percentile(drawwise_attr_reliability, 97.5, axis=0)
+
+for k in range(len(mean_rel)):
+    print(f"Attribute {k+1}: {mean_rel[k]:.3f} (95% CI: {ci_lower[k]:.3f}, {ci_upper[k]:.3f})")
+
+```
+
+```{python}
+# Extract posterior draws: shape = (draws, J, K)
+prob_resp_attr = fit.stan_variable("prob_resp_attr")
+
+# Posterior mean mastery probabilities
+post_mean_attr = prob_resp_attr.mean(axis=0)  # J x K
+
+# Classify each person’s mastery state for each attribute
+map_mastery = (post_mean_attr >= 0.5).astype(int)  # 1 = mastered, 0 = not mastered
+
+# Probability of assigned state
+picked_prob_attr = np.where(
+    map_mastery == 1,
+    post_mean_attr,
+    1 - post_mean_attr
+)  # J x K
+
+# Overall attribute reliability (average over persons and attributes)
+attr_reliability_overall = picked_prob_attr.mean()
+
+# Reliability per attribute
+attr_reliability_by_k = picked_prob_attr.mean(axis=0)  # length K
+
+print(f"Overall attribute reliability: {attr_reliability_overall:.3f}")
+for k, val in enumerate(attr_reliability_by_k, 1):
+    print(f"Attribute {k} reliability: {val:.3f}")
+
+```

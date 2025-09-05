@@ -11,29 +11,32 @@ df <- tribble(
 # 1 = better
 # n ~ 90
 
-set.seed(1110)
+set.seed(12345)
 sample_df <- tibble(
-  stale_score = rnorm(100, df$score[1], 1) |> round(),
-  blade_score = rnorm(100, df$score[2], 1) |> round(),
-  false_score = rnorm(100, df$score[3], 1) |> round(),
-  baratza_score = rnorm(100, df$score[4], 1) |> round()
-) |> 
-rowid_to_column()
-
-# remove impossible values
-remove <- sample_df |> 
-  filter(
-    if_any(
-      everything(),
-      ~.x %in% c(-1, 0, 5, 6)
+  rowid = 1:90,
+  ranks = map(
+    1:90,
+    ~sample(1:4)
     )
+) |> 
+unnest_wider(
+  ranks,
+  names_sep = "_"
   )
 
-sample_df <- anti_join(sample_df, remove)
+psych::describe(sample_df)
 
+sample_df <- sample_df |> 
+  rename(
+    stale_rank = ranks_1,
+    blade_rank = ranks_2,
+    baratza_rank = ranks_3,
+    false_rank = ranks_4
+  )
+
+
+sample_df |> head()
 sample_df |> count()
-
-library(plotly)
 
 sample_long <- sample_df |> 
   pivot_longer(
@@ -65,7 +68,7 @@ sample_long |>
 sample_long <- sample_long |> 
   mutate(
     name = as.factor(name),
-    name = relevel(name, ref = "stale_score"),
+    name = relevel(name, ref = "stale_rank"),
     value = factor(
       value,
       ordered = TRUE,
@@ -77,17 +80,17 @@ long_dummy <- psych::dummy.code(sample_long$name) |>
 
 long_dummy <- long_dummy |> 
   rename(
-    stale_col = stale_score,
-    baratza_col = baratza_score,
-    blade_col = blade_score,
-    false_col = false_score
+    stale_col = stale_rank,
+    baratza_col = baratza_rank,
+    blade_col = blade_rank,
+    false_col = false_rank
   )
 
 sample_df |> head()
 sample_long |> head()
 long_dummy |> head()
 
-set.seed(1110)
+set.seed(12345)
 ex <- MASS::polr(value ~ name, data = sample_long, Hess = TRUE)
 ex_fit <- summary(ex)
 
@@ -130,7 +133,6 @@ library(brms)
 library(posterior)
 library(tidybayes)
 
-set.seed(1110)
 fit <- brm(
   value ~ baratza_col + blade_col + false_col,
   family = cumulative("logit"),
@@ -187,11 +189,9 @@ gt::tab_header(
 # Having a baratza grinder has 50% the odds of being ranked higher 
 # regardless of whether you compare 1 vs 2–4, or 1–2 vs 3–4, or 1–3 vs 4
 
-loo(fit)
+loo(fit) |> str()
 
-8.6 * 2.5
-.3 * 2.5
-17.3 * 2.5
+loo(fit)$elpd_loo < loo(fit)$se_elpd_loo * 2.5
 
 color_scheme_set("viridis")
 pp_check(fit, "dens_overlay", 100)

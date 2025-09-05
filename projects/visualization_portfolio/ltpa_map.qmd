@@ -1,0 +1,349 @@
+---
+title: "Leisure-time Physical Activity Map Visualization"
+author: "Jonathan A. Pedroza, PhD"
+execute:
+  warning: false
+  message: false
+project:
+  output-dir: docs
+format: 
+  html:
+    grid:
+      body-width: 1300px
+      gutter-width: 1.5rem
+    code-fold: show
+    self-contained: true
+---
+
+**Note:** Code has been included for examination; however, code chunks can be hidden by clicking on the triangle to the left of `Code`. All code can be run as processed data is included as a GitHub link ([GitHub folder included here](https://github.com/jpedroza1228/dissertation/tree/master/final_data))
+
+```{r}
+#| eval: false
+#| echo: true
+
+install.packages(
+  c(
+    "tidyverse", "ggmap", "maps",
+    "RColorBrewer", "ggrepel", "plotly",
+    "lme4", "broom", "broom.mixed", "reactable"
+    )
+  )
+```
+
+```{r}
+library(tidyverse)
+
+cat_map <- purrr::map
+
+options(max.print = 99999)
+options(scipen = 999)
+theme_set(theme_light())
+```
+
+```{r}
+county_icc_2level <- function(multi_model){
+  between <- multi_model$vcov[1]
+  total <- multi_model$vcov[1] + multi_model$vcov[2]
+  
+  between/total
+}
+
+
+counties <- function(years){
+  
+  link <- glue::glue(
+    "https://raw.githubusercontent.com/jpedroza1228/dissertation/master/final_data/county{years}_sub.csv"
+    )
+  
+  rio::import(link, setclass = "tibble")
+  
+}
+
+county <- map_df(16:20, ~counties(.x))
+```
+
+```{r}
+county <- county |> 
+  dplyr::select(
+    rowid,
+    state_fips_code:release_year,
+    poor_or_fair_health:access_to_exercise_opportunities,
+    preventable_hospital_stays,
+    some_college:driving_alone_to_work,
+    food_insecurity:uninsured_children,
+    median_household_income:percent_rural
+    ) |> 
+  rename(
+    year = release_year,
+    state = state_abbreviation
+    ) |> 
+  mutate(
+    phyact_percent = (physical_inactivity*100),
+    ltpa_percent = (100 - phyact_percent)
+    ) |> 
+  rename(
+    access_pa = access_to_exercise_opportunities
+    ) |> 
+  mutate(
+    smoking_percent = adult_smoking*100,
+    obesity_percent = adult_obesity*100,
+    access_pa_percent = access_pa*100,
+    college_percent = some_college*100,
+    unemployment_percent = unemployment*100,
+    driving_alone_percent = driving_alone_to_work*100,
+    percent_65plus = percent_65_and_older*100,
+    latino_percent = percent_hispanic*100,
+    rural_percent = percent_rural*100
+    ) |> 
+  dplyr::select(
+    -c(
+      adult_smoking,
+      adult_obesity,
+      access_pa,
+      some_college,
+      unemployment,
+      driving_alone_to_work,
+      percent_65_and_older,
+      percent_hispanic,
+      percent_rural,
+      phyact_percent,
+      physical_inactivity
+      )
+  )
+
+county$year_num <- as.numeric(county$year)
+
+ca <- county |> 
+  filter(
+    state == "CA"
+    )  
+```
+
+```{r}
+library(ggmap)
+library(maps)
+library(RColorBrewer)
+library(ggrepel)
+library(plotly)
+# display.brewer.all()
+
+us <- map_data(map = "county")
+
+us <- us |> 
+  janitor::clean_names() |> 
+  rename(state = region,
+         no_name_county = subregion) 
+
+us$state <- str_replace_all(us$state, pattern = " ", replacement = "_")
+us$no_name_county <- str_replace_all(us$no_name_county, pattern = " ", replacement = "_")
+
+us <- us |> 
+  mutate(
+    state = recode(
+    state, 
+    "alabama" = "AL","alaska" = "AK","arizona" = "AZ","arkansas" = "AR",
+    "california" = "CA","colorado" = "CO","connecticut" = "CT",
+    "delaware" = "DE",
+    "florida" = "FL",
+    "georgia" = "GA",
+    "hawaii" = "HI",
+    "idaho" = "ID","illinois" = "IL","indiana" = "IN","iowa" = "IA",
+    "kansas" = "KS","kentucky" = "KY",
+    "louisiana" = "LA",
+    "maine" = "MA","maryland" = "MD","massachusetts" = "MA","michigan" = "MI",
+    "minnesota" = "MN","mississippi" = "MS","missouri" = "MO","montana" = "MT",
+    "nebraska" = "NE","nevada" = "NV","new_hampshire" = "NH","new_jersey" = "NJ",
+    "new_mexico" = "NM","new_york" = "NY","north_carolina" = "NC","north_dakota" = "ND",
+    "ohio" = "OH","oklahoma" = "OK","oregon" = "OR",
+    "pennsylvania" = "PA",
+    "rhode_island" = "RI",
+    "south_carolina" = "SC","south_dakota" = "SD",
+    "tennessee" = "TN","texas" = "TX",
+    "utah" = "UT",
+    "vermont" = "VT","virginia" = "VA",
+    "washington" = "WA","west_virginia" = "WV","wisconsin" = "WI","wyoming" = "WY"
+    )
+  )
+
+county <- county |>
+  mutate(no_name_county = str_replace_all(county_name, "_county", ""))
+
+visual <- right_join(us, county, by = c("state", "no_name_county"))
+
+ca_visual <- visual |> 
+  filter(state == "CA") |>
+  filter(no_name_county != "california")
+
+lassen_county <- ca_visual |>
+  filter(
+    str_detect(
+      no_name_county,
+      "las"
+    )
+  ) |>
+  mutate(
+    no_name_county = case_when(
+      no_name_county == "lassen" ~ "Lassen County",
+      TRUE ~ no_name_county
+    )
+  ) |>
+  distinct(
+    no_name_county,
+    year,
+    .keep_all = TRUE
+    )
+```
+
+# Leisure-time Physical Activity in California Counties
+
+```{r}
+library(lme4)
+library(broom)
+library(broom.mixed)
+library(reactable)
+
+ca_model <- lmer(ltpa_percent ~ year_num + (1 | county_name), data = ca_visual)
+
+tidy(ca_model) |>
+  mutate(
+    across(
+      -c(
+        effect, 
+        group,
+        term
+      ),
+      ~round(.x, 2)
+    )
+  ) |>
+  reactable()
+```
+
+```{r}
+#| eval: true
+#| echo: false
+
+ca_icc <- as_tibble(VarCorr(ca_model))
+ca_icc
+
+ca_variation <- county_icc_2level(ca_icc)
+round(ca_variation, 2) *100
+```
+
+```{r}
+ca_visual <- ca_visual |> 
+  mutate(
+    no_name_county2 = str_replace_all(no_name_county, "_", " "),
+    no_name_county2 = str_to_title(no_name_county2),
+    hover = paste(no_name_county2, '<br>')
+  )
+
+ca_ltpa <- 
+ggplot(
+  data = ca_visual,
+    aes(
+      x = long,
+      y = lat,
+      group = group,
+      fill = ltpa_percent,
+      text = paste("County:", hover)
+    )
+  ) +
+  geom_polygon(
+    color = "black"
+  ) +
+  #geom_text_repel(
+  #  data = lassen_county,
+  #  aes(
+  #    x = long,
+  #    label = no_name_county
+  #  ),
+  #  y = 40.75,
+  #  color = "red",
+  #  nudge_x = 2
+  #) +
+  facet_wrap(
+    ~year
+    ) +
+   scale_fill_gradientn(
+   colors = brewer.pal(
+      n = 5,
+      name = "RdYlGn"
+      )
+  ) + 
+  labs(
+    title = "Leisure-time Physical Activity (LTPA)",
+    subtitle = "in California from 2016 to 2020",
+    x = "",
+    y = "",
+    fill = "LTPA",
+    caption = "Data is from the County Health Rankings & Roadmaps Website."
+  ) +
+  theme_classic() +
+  # theme(
+  #   plot.title = element_text(size = 20),
+  #   plot.subtitle = element_text(size = 18),
+  #   legend.position = c(.85, .3),
+  #   axis.text = element_blank(),
+  #   axis.ticks = element_blank(),
+  #   axis.line = element_blank(),
+  #   legend.key.width = unit(1.5, "cm"), 
+  #   legend.title = element_text(size = 14),
+  #   legend.text = element_text(size = 14),
+  #   strip.text = element_text(size = 14)
+  # ) +
+  NULL
+```
+
+# Visualization
+
+This visualization is an extension of a plot that I created for a presentation I delivered over Twitter to public-health practitioners and researchers. The presentation can be found [here](https://x.com/PaSectionAPHA/status/1309192269447143425). I was solely responsible for every component of the work in this project. I found the sources that collected the data, I manipulated and joined multiple tables of data to have multiple years and map coordinates, I conducted the analyses for the presentation and similar projects, and I was fully responsible for creating the visualizations and the narratives for the implications of the project's findings. 
+
+The purpose of the presentation was to investigate whether there was leisure-time physical activity (LTPA) changes during this 5 year timeframe. The model conducted (multilevel model) accounts for the nested natural of the data with time being accounted for within each county. The findings indicate that every year, from 2016 to 2020 (prior to the pandemic), the average percentage of reported LTPA for California counties would drop by approximately 1% (*b* = -0.85). Further analysis of the drop in LTPA revealed that `r round(ca_variation, 2) *100`% of the variation in LTPA differences during this time was due to differences between counties. Therefore, this visualization shows that while the average amount of LTPA drops by 1% in all California counties, there are some counties that had LTPA significantly drop during this time. The focus on Lassen County in northern California is due to the drastic reduction in LTPA by 2020. The decision to use these colors rather than address potential colorblind issues when viewing this plot was made because the colors assist with the storytelling. The choice of colors were due to the understanding that green is often viewed as good while red shows a deficit. This presentation visualization then led to additional analyses using geospatial regressions to examine if access to recreational resources (e.g., fitness centers, parks, beaches, etc.) was responsible for the reduction in LTPA in these counties.
+
+```{r}
+#| eval: true
+#| echo: true
+
+ca_ltpa_plotly <- ggplotly(ca_ltpa)
+
+ca_ltpa_plotly
+
+# htmlwidgets::saveWidget(as_widget(ca_ltpa_plotly), "ca_ltpa_plotly.html")
+```
+
+[View Interactive California LTPA Map in Full Screen](`r here::here("projects/visualization_portfolio", "ca_ltpa_plotly.html")`)
+
+```{r}
+#| eval: true
+#| echo: true
+
+ca_line <- ca_visual |>
+  mutate(
+    named_county = str_replace_all(no_name_county, "_", " "),
+    named_county = str_to_title(named_county),
+    year = as.factor(year)
+  ) |>
+  distinct(
+    named_county,
+    year,
+    ltpa_percent
+  ) |> 
+  plot_ly(
+  x = ~year,
+  y = ~ltpa_percent,
+  name = ~named_county,
+  type = "scatter",
+  mode = "lines"
+) |>
+  layout(
+    title = "Leisure-time Physical Activity for Each County\nin California From 2016 to 2020",
+    xaxis = list(title = " "),
+    yaxis = list(title = "Leisure-time Physical Activity")
+    )
+
+ca_line
+
+# htmlwidgets::saveWidget(as_widget(ca_line), "ca_line.html")
+```
+
+*Note*: Double clicking on a particular county in the legend will show that county's LTPA over time. If comparisons between counties are desired, a single click will show any other county of interest. Double clicking when viewing one county will revert back to the line plots of all the California counties.
