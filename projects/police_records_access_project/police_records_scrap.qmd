@@ -1,0 +1,20 @@
+---
+title: "Police Recrods Access Project"
+author: Jonathan A. Pedroza, PhD
+format: html
+---
+
+# Loading In Data
+
+```{python}
+from bs4 import BeautifulSoup as bs
+import requests
+import pymupdf
+```
+
+
+```{python}
+link = 'https://clean.calmatters.org/'
+
+
+```

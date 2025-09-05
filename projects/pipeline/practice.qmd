@@ -1,0 +1,42 @@
+---
+title: "Stock Model Pipeline"
+author: Jonathan A. Pedroza
+format: html
+---
+
+```{r}
+url <- "https://docs.google.com/spreadsheets/d/15Cd95xb-OPBUumuqDHKHrZ4SxetR7hy0UnAs04aRn74/edit?gid=0#gid=0"
+
+df <- googlesheets4::read_sheet(url, sheet = 1)
+df <- data.frame(df)
+```
+
+```{r}
+library(reticulate)
+
+use_virtualenv(here::here("project_venv"))
+
+repl_python()
+```
+
+```{python}
+import os
+import pandas as pd
+import numpy as np
+import plotnine as pn
+import matplotlib
+import matplotlib.pyplot as plt
+import joblib
+from pyhere import here
+from janitor import clean_names
+
+os.environ['QT_API'] = 'PyQt6'
+
+pd.set_option('display.max_columns', None)
+pd.options.mode.copy_on_write = True
+matplotlib.rcParams.update({'savefig.bbox': 'tight'}) # Keeps plotnine legend from being cut off
+```
+
+```{python}
+py$df
+```

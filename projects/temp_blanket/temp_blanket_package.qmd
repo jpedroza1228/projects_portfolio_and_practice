@@ -1,0 +1,32 @@
+---
+title: "Forecasting with Prophet Model"
+author: Jonathan A Pedroza
+format: html
+---
+
+# Loading In Data
+```{r}
+install.packages("openmeteo")
+
+library(tidyverse)
+library(openmeteo)
+
+# if current year == go from 01/01/year to current day
+
+function(location, lat = NULL, long = NULL, year, daily, freedom_units = TRUE){
+  if(is.null(lat) & is.null(long)){
+    location <- 
+    year <- 
+  }
+}
+
+la23 <- weather_history(
+  location = "Los Angeles",
+  start = "2023-01-01",
+  end = "2023-12-31",
+  daily = "temperature_2m_max"
+) |>
+  mutate(
+    avg_temp = (daily_temperature_2m_max * 1.8) + 32
+  )
+```
