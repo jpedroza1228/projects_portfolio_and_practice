@@ -176,29 +176,49 @@ combo.head()
 
 pn.ggplot.show(
   pn.ggplot(combo, pn.aes('age'))
-  + pn.geom_histogram(color = mycolor)
+  + pn.geom_histogram(fill = mycolor, color = 'white')
   + pn.theme_light()
 )
 
-import pyarrow as pa
-combo_panda = pa.table(combo).to_pandas()
-# plotnine version = 0.15.0
-# polars version = 1.33.1
-# pyarrow version = 21.0.0
+from mizani.palettes import brewer_pal
+qual_palette = brewer_pal("qual", "Set1")
+colors = qual_palette(5)
 
 pn.ggplot.show(
-  pn.ggplot(combo_panda, pn.aes('age'))
-  + pn.geom_histogram(color = mycolor)
-  + pn.theme_light()
-)
-
-pn.ggplot.show(
-  pn.ggplot(combo_panda, pn.aes('diff', 'games_right'))
-  + pn.geom_point(pn.aes(color = 'age_cat'), alpha = .7, size = 2)
-  + pn.geom_smooth(method = 'lm')
+  pn.ggplot(combo, pn.aes('diff', 'games_right'))
+  + pn.geom_point(pn.aes(color = 'age_cat'), size = 2)
+  + pn.geom_smooth(method = 'lm', alpha = .3, linetype = 'dashed')
   + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
             subtitle = 'For the Lowest 5,000 Rated Chess Players That Played 0 Games in August',
             x = 'Rating Difference',
             y = 'Number of Games Played in September')
+  + pn.scale_color_manual(values = colors)
   + pn.theme_light()
 )
+
+pn.ggplot.show(
+  pn.ggplot(combo, pn.aes('diff', 'games_right'))
+  + pn.geom_point(pn.aes(color = 'age_cat'), size = 2)
+  + pn.geom_smooth(pn.aes(color = 'age_cat'), method = 'lm', se = False)
+  + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
+            subtitle = 'For the Lowest 5,000 Rated Chess Players That Played 0 Games in August',
+            x = 'Rating Difference',
+            y = 'Number of Games Played in September')
+  + pn.scale_color_manual(values = colors)
+  + pn.theme_light()
+)
+
+combo.select(pl.col('age_cat').value_counts()).unnest('age_cat').sort(pl.col('count'))
+
+# import pyarrow as pa
+# combo_panda = pa.table(combo).to_pandas()
+# # plotnine version = 0.15.0
+# # polars version = 1.33.1
+# # pyarrow version = 21.0.0
+
+# pn.ggplot.show(
+#   pn.ggplot(combo_panda, pn.aes('age'))
+#   + pn.geom_histogram(color = mycolor)
+#   + pn.theme_light()
+# )
+

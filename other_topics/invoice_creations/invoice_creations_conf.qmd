@@ -3,10 +3,10 @@ company: Posit
 name: Jonathan Andrew Pedroza
 specific_name: Posit Conf - Python \#2
 address: 13428 Tedemory Dr., Whittier, CA 90602
-issue_date: 08/21/2025
-start_of_work: 08/04/2025
-end_of_work: 08/21/2025
-summary: Academy mentor weeks 0 - 2
+issue_date: 09/11/2025
+start_of_work: 08/25/2025
+end_of_work: 09/11/2025
+summary: Academy mentor weeks 3-5
 amount: $1000
 format:
   invoice-typst: default
