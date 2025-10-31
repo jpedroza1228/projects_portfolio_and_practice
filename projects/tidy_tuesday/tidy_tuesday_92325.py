@@ -48,7 +48,7 @@ combo['diff'] = combo['rating_y'] - combo['rating_x']
 
 pn.ggplot.show(
   pn.ggplot(combo, pn.aes('diff', 'games_y'))
-  + pn.geom_point(alpha = .3)
+  + pn.geom_point(alpha = .7, color = mycolor)
   + pn.geom_smooth(method = 'lm')
   + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
             subtitle = 'For the Lowest 5000 Rated Chess Players That Played 0 Games in August',
@@ -59,7 +59,7 @@ pn.ggplot.show(
 
 pn.ggplot.show(
   pn.ggplot(combo, pn.aes('diff', 'games_y'))
-  + pn.geom_point(alpha = .3, color = mycolor)
+  + pn.geom_point(alpha = .7, color = mycolor)
   # + pn.geom_smooth(method = 'lm')
   + pn.geom_smooth(formula = 'y ~ x + x**2', method = 'lm')
   + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
@@ -114,3 +114,111 @@ fig = px.line(combo_long,
                 'id': True
               })
 fig.show()
+
+
+import polars as pl
+import os
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import plotnine as pn
+
+mycolor = 'seagreen'
+
+os.environ['QT_API'] = 'PyQt6'
+
+matplotlib.rcParams.update({'savefig.bbox': 'tight'}) # Keeps plotnine legend from being cut off
+
+rate_aug = pl.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-09-23/fide_ratings_august.csv')
+rate_sept = pl.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-09-23/fide_ratings_september.csv')
+
+aug_filter = (
+  rate_aug
+  .filter(pl.col('games') == 0)
+)
+
+sept_filter = (
+  rate_sept
+  .filter(pl.col('games') > 0)
+)
+
+aug_lowest = (
+  aug_filter
+  .select(pl.col('id'),
+          pl.col('games'),
+          pl.col('rating'))
+  .sort(pl.col('rating'))
+  .head(5000)
+)
+
+combo = aug_lowest.join(sept_filter, 'id', 'inner')
+combo = combo.with_columns((pl.col('rating_right') - pl.col('rating')).alias('diff'))
+
+combo = combo.with_columns((2025 - pl.col('bday')).alias('age'))
+
+combo = (
+  combo
+  .with_columns(pl.when(pl.col('age') <= 10)
+                .then(pl.lit('10 or younger'))
+                .when(pl.col('age') <= 20)
+                .then(pl.lit('11-20'))
+                .when(pl.col('age') <= 30)
+                .then(pl.lit('21-30'))
+                .when(pl.col('age') <= 50)
+                .then(pl.lit('31-50'))
+                .otherwise(pl.lit('51+'))
+                .alias('age_cat'))
+)
+
+# combo = combo.with_columns(pl.col('age_cat').cast(pl.Categorical))
+
+combo.head()
+
+pn.ggplot.show(
+  pn.ggplot(combo, pn.aes('age'))
+  + pn.geom_histogram(fill = mycolor, color = 'white')
+  + pn.theme_light()
+)
+
+from mizani.palettes import brewer_pal
+qual_palette = brewer_pal("qual", "Set1")
+colors = qual_palette(5)
+
+pn.ggplot.show(
+  pn.ggplot(combo, pn.aes('diff', 'games_right'))
+  + pn.geom_point(pn.aes(color = 'age_cat'), size = 2)
+  + pn.geom_smooth(method = 'lm', alpha = .3, linetype = 'dashed')
+  + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
+            subtitle = 'For the Lowest 5,000 Rated Chess Players That Played 0 Games in August',
+            x = 'Rating Difference',
+            y = 'Number of Games Played in September')
+  + pn.scale_color_manual(values = colors)
+  + pn.theme_light()
+)
+
+pn.ggplot.show(
+  pn.ggplot(combo, pn.aes('diff', 'games_right'))
+  + pn.geom_point(pn.aes(color = 'age_cat'), size = 2)
+  + pn.geom_smooth(pn.aes(color = 'age_cat'), method = 'lm', se = False)
+  + pn.labs(title = 'Relationship Between Rating Difference and Number of Games Played',
+            subtitle = 'For the Lowest 5,000 Rated Chess Players That Played 0 Games in August',
+            x = 'Rating Difference',
+            y = 'Number of Games Played in September')
+  + pn.scale_color_manual(values = colors)
+  + pn.theme_light()
+)
+
+combo.select(pl.col('age_cat').value_counts()).unnest('age_cat').sort(pl.col('count'))
+
+# import pyarrow as pa
+# combo_panda = pa.table(combo).to_pandas()
+# # plotnine version = 0.15.0
+# # polars version = 1.33.1
+# # pyarrow version = 21.0.0
+
+# pn.ggplot.show(
+#   pn.ggplot(combo_panda, pn.aes('age'))
+#   + pn.geom_histogram(color = mycolor)
+#   + pn.theme_light()
+# )
+

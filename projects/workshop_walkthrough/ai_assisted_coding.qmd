@@ -1,0 +1,188 @@
+---
+title: Walkthrough of Installing Everything Needed for GitHub Copilot
+date: "`r Sys.Date()`"
+format:
+  typst:
+    toc: true
+    section-numbering: 1.1.a
+    include-in-header: theme.typ
+---
+
+```{r}
+#| eval: true
+#| echo: false
+
+program <- "R"
+# program <- "Python"
+
+course <- glue::glue("AI-Assisted-Coding-In-{program}")
+# course <- "AI-Assisted-Coding-In-Python"
+
+```
+
+# Checklist of Everything Needed to Install for `r course`
+
+-   \[\] Install GitHub
+-   \[\] Install Visual Studio (VS) Code
+-   \[\] Install `r program`
+-   \[\] Sign up for GitHub Copilot
+-   \[\] Copy GitHub repository/Download Zip file
+-   \[\] Adjust VSCode to work with `r program`
+
+When these are completed, you are ready for your `r course` workshop.
+
+# Installing GitHub
+
+Go to [GitHub](https://github.com/) and sign up for a GitHub account.
+
+![](github_install.png)
+
+At this page, you will sign up for GitHub with your `@berkeley.edu` email account. Follow the directions to verify your account. Below are some recommendations for creating a username (inspired by https://happygitwithr.com/github-acct).
+
+-   Use part of your real name so it is easier for people to know who you are
+-   Try and keep it short, you may have to type it a lot
+-   Keep everything lowercase. If you really want to separate words, use a hyphen (-) or an underscore (\_)
+
+Once you sign in, you will be at your dashboard. You will come back to GitHub shortly to copy the information for the workshop materials.
+
+![](github_dashboard.png)
+
+## Adding Additional Email Addresses
+
+### Optional Two-Factor Authentication (2FA)
+
+For more information on 2FA, you can find resources [here (About 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/about-two-factor-authentication) or [here (Securing account with 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa).
+
+![](github_settings.png)
+
+![](github_settings_pw.png)
+
+![](github_2fa.png)
+
+## GitHub TLDR
+
+1.  Go to [GitHub](https://github.com/) to sign up
+2.  Create account (use `@berkeley.edu` email)
+3.  Create a good username
+4.  Add additional email addresses
+5.  Set up 2FA
+
+```{=typst}
+#line(length: 100%)
+```
+-   [x] Install GitHub
+-   \[\] Install Visual Studio (VS) Code
+-   \[\] Install `r program`
+-   \[\] Sign up for GitHub Copilot
+-   \[\] Copy GitHub repository/Download Zip file
+-   \[\] Adjust VSCode to work with `r program`
+
+# Sign Up for GitHub Copilot (THIS SECTION NEEDS WORK)
+
+Signing up for GitHub Copilot will depend on whether you plan to sign up for the free version, CoPilot *Pro* using verified information, or pay for a Pro plan ([see pricing information here](https://github.com/features/copilot/plans)).
+
+## Copilot Pro (Instructions for Verification)
+
+To get Copilot *Pro* for teachers and students (for free) you need to [apply here](https://education.github.com/discount_requests/application)
+
+## Free Version
+
+The free version of GitHub Copilot comes with VSCode. You can install the necessary extensions in the following section.
+
+## Copilot TLDR
+
+1.  Sign up for Copilot *Pro* using student/teacher verification, paying a monthly fee, or using the free version.
+
+```{=typst}
+#line(length: 100%)
+```
+-   [x] Install GitHub
+-   \[\] Install Visual Studio (VS) Code
+-   \[\] Install `r program`
+-   [x] Sign up for GitHub Copilot
+-   \[\] Copy GitHub repository/Download Zip file
+-   \[\] Adjust VSCode to work with `r program`
+
+# Installing `r program`
+
+To install `r program`, you will go to [The Comprhensive R Archive Network (CRAN) website](https://cloud.r-project.org/). There you can download `r program` for your operating system.
+
+### Mac
+
+### Windows
+
+### Linux
+
+There are some really good instructions on how to [install R here](https://cloud.r-project.org/bin/linux/ubuntu/#user). 
+
+```{txt}
+sudo apt update
+sudo apt install -y build-essential libcurl4-openssl-dev libssl-dev libxml2-dev
+
+# optionally
+# sudo apt install -y libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+```
+
+```{=typst}
+#line(length: 100%)
+```
+-   [x] Install GitHub
+-   \[\] Install Visual Studio (VS) Code
+-   \[\] Install `r program`
+-   [x] Sign up for GitHub Copilot
+-   \[\] Copy GitHub repository/Download Zip file
+-   \[\] Adjust VSCode to work with `r program`
+
+# Install VSCode
+
+Let's move forward with installing VSCode. You can install [VSCode here](https://code.visualstudio.com/download) for your operating system. Below are detailed instructions on how to install VSCode.
+
+### Mac (FIND Mac for install)
+
+Link: https://code.visualstudio.com/docs/setup/mac
+
+### Windows (FIND Windows for install)
+
+Link: https://code.visualstudio.com/docs/setup/windows
+
+### Linux
+
+> **Note**: Everything below shows installation using Linux Mint.
+
+```{txt}
+System:
+  Host: jp1228-Swift-SF314-52 Kernel: 6.8.0-87-generic arch: x86_64 bits: 64
+  Desktop: Cinnamon v: 6.4.8 Distro: Linux Mint 22.1 Xia
+
+```
+
+Link: https://code.visualstudio.com/docs/setup/linux
+
+**Option 1: Use the Link**
+
+1.  Click on the link above and open the download file.
+
+![](vscode_file_linux.png)
+
+2.  Click Install Package to start the install.
+
+![](linux_mint_vscode_install.png)
+
+**Option 2: Download Using Terminal**
+
+1.  Update your programs.
+
+![](linux_update.png)
+
+2.  Then you will install the file that you downloaded from [this page](https://code.visualstudio.com/download) as shown below. Your file will look different, depending on the version and differences in your linux distribution, but it should start downloading after running the code below.
+
+```{txt}
+sudo apt install ./<file_name>.deb
+```
+
+![](vscode_install_linux.png)
+
+## VSCode Documentation
+
+When you installed VSCode, it should have brought you to the documentation page. If not, you can find all the [documentation here](https://code.visualstudio.com/docs). [This tutorial](https://code.visualstudio.com/docs/getstarted/getting-started) also provides an in-depth tutorial on getting started with VSCode.
+
