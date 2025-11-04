@@ -1,0 +1,427 @@
+---
+title: Walkthrough of Installing Everything Needed for AI-Assisted-Coding-In-Python Workshop
+date: "`r Sys.Date()`"
+format:
+  typst:
+    toc: true
+    section-numbering: 1.1.a
+    include-in-header: theme.typ
+---
+
+```{r}
+#| eval: true
+#| echo: false
+
+program <- "Python"
+course <- glue::glue("AI-Assisted-Coding-In-{program}")
+github_repo <- glue::glue("https://github.com/dlab-berkeley/AI-Assisted-Coding-In-{program}/tree/main")
+```
+
+# Checklist of Everything Needed to Install for `r course`
+
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+When these are completed, you are ready for your `r course` workshop.
+
+# Installing GitHub
+
+Go to [GitHub](https://github.com/) and sign up for a GitHub account.
+
+![](github_install.png)
+
+At this page, you will sign up for GitHub with your `@berkeley.edu` email account. Follow the directions to verify your account. Below are some recommendations for creating a username (inspired by https://happygitwithr.com/github-acct).
+
+-   Use part of your real name so it is easier for people to know who you are
+-   Try and keep it short, you may have to type it a lot
+-   Keep everything lowercase. If you really want to separate words, use a hyphen (-) or an underscore (\_)
+
+Once you sign in, you will be at your dashboard. You will come back to GitHub shortly to copy the information for the workshop materials.
+
+![](github_dashboard.png)
+
+At the top, you'll see the dropdown menu for your repositories and your profile.
+
+![](github_dashboard_top.png)
+
+Click on your profile circle and go to your settings.
+
+![](github_settings.png)
+
+INCLUDE TEXT HERE
+
+![](github_settings_main_page.png)
+
+INCLUDE TEXT HERE
+
+![](github_billing_section.png)
+
+INCLUDE TEXT HERE
+
+![](github_ed_benefits.png)
+
+INCLUDE TEXT HERE
+
+![](github_ed_benefits_application.png)
+
+INCLUDE TEXT HERE
+
+![](github_share_location.png)
+
+INCLUDE TEXT HERE
+
+![](ucpath_main_page.png)
+
+INCLUDE TEXT HERE
+
+![](ucpath_verification.png)
+
+INCLUDE TEXT HERE
+
+![](ucpath_generate_report.png)
+
+INCLUDE TEXT HERE
+
+![](github_ed_submitted.png)
+
+INCLUDE TEXT HERE
+
+![](github_ed_approved.png)
+
+INCLUDE TEXT HERE
+
+![](github_add_email.png)
+
+
+## Adding Additional Email Addresses
+
+### Optional Two-Factor Authentication (2FA)
+
+For more information on 2FA, you can find resources [here (About 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/about-two-factor-authentication) or [here (Securing account with 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa).
+
+![](github_settings_pw.png)
+
+![](github_2fa.png)
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+# Sign Up for GitHub Copilot (THIS SECTION NEEDS WORK)
+
+Signing up for GitHub Copilot will depend on whether you plan to sign up for the free version, CoPilot *Pro* using verified information, or pay for a Pro plan ([see pricing information here](https://github.com/features/copilot/plans)).
+
+## Copilot Pro (Instructions for Verification)
+
+To get Copilot *Pro* for teachers and students (for free) you need to [apply here](https://education.github.com/discount_requests/application)
+
+## Free Version
+
+The free version of GitHub Copilot comes with VSCode. You can install the necessary extensions in the following section.
+
+## Copilot TLDR
+
+1.  Sign up for Copilot *Pro* using student/teacher verification, paying a monthly fee, or using the free version.
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+# Installing `r program`
+
+To install `r program`, you will go to [The Comprhensive R Archive Network (CRAN) website](https://cloud.r-project.org/). There you can download `r program` for your operating system.
+
+### Mac
+
+Follow the directions for installing `r program`. You can keep the defaults for everything. When installed, you should see a message stating `The installation was successful.` 
+
+### Windows
+
+Follow the directions for installing `r program`. You can keep the defaults for everything. When installed, you should see a message stating `The installation was successful.`
+
+### Linux
+
+There are some really good instructions on how to [install R here](https://cloud.r-project.org/bin/linux/ubuntu/#user). 
+
+```{txt}
+sudo apt update
+sudo apt install -y build-essential libcurl4-openssl-dev libssl-dev libxml2-dev
+
+# optionally
+# sudo apt install -y libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+```
+
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+# Install VSCode
+
+Let's move forward with installing VSCode. You can install [VSCode here](https://code.visualstudio.com/download) for your operating system. Below are detailed instructions on how to install VSCode.
+
+### Mac
+
+Link: https://code.visualstudio.com/docs/setup/mac
+
+Follow the directions to install VSCode. Below, I will include some helpful tips for VSCode extensions that may help when using `r program`.
+
+### Windows
+
+Link: https://code.visualstudio.com/docs/setup/windows
+
+Follow the directions to install VSCode. Below, I will include some helpful tips for VSCode extensions that may help when using `r program`. **For Windows users, it is recommended to check “Save version number in registry” during installation so that the R extension can find your R installation automatically. If you have not done this you may need to add the location of your R to your PATH manually (see FAQ 3.1 I am using windows and my VS Code can’t find R!).**
+
+### Linux
+
+> **Note**: Everything below shows installation using Linux Mint.
+
+```{txt}
+System:
+  Host: jp1228-Swift-SF314-52 Kernel: 6.8.0-87-generic arch: x86_64 bits: 64
+  Desktop: Cinnamon v: 6.4.8 Distro: Linux Mint 22.1 Xia
+
+```
+
+Link: https://code.visualstudio.com/docs/setup/linux
+
+**Option 1: Use the Link**
+
+1.  Click on the link above and open the download file.
+
+![](vscode_file_linux.png)
+
+2.  Click Install Package to start the install.
+
+![](linux_mint_vscode_install.png)
+
+**Option 2: Download Using Terminal**
+
+1.  Update your programs.
+
+![](linux_update.png)
+
+2.  Then you will install the file that you downloaded from [this page](https://code.visualstudio.com/download) as shown below. Your file will look different, depending on the version and differences in your linux distribution, but it should start downloading after running the code below.
+
+```{txt}
+sudo apt install ./<file_name>.deb
+# include the name of your file and change <file_name> to the name of your file
+```
+
+![](vscode_install_linux.png)
+
+## VSCode Documentation
+
+When you installed VSCode, it should have brought you to the documentation page. If not, you can find all the [documentation here](https://code.visualstudio.com/docs). [This tutorial](https://code.visualstudio.com/docs/getstarted/getting-started) also provides an in-depth tutorial on getting started with VSCode.
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+# Setting up `r program` in VSCode
+
+**Note** Your VSCode will look slightly different, as the screenshots are from a custom VSCode theme. Additionally, the ordering and number of tabs on the sidebar may be different from the VSCode default. 
+
+Depending on the version of `r program` you installed, there may be some issues in incorporating some of the packages. I will include alternatives to try and make sure everything works. 
+
+If you have not downloaded `r program`, then you will want to do that first. Once you have `r program`, then you can move forward with installing extensions for `r program`. 
+
+![](vscode_main_page.png)
+
+![](vscode_extension.png)
+
+![](vscode_search_extension.png)
+
+The easiest way of finding all the extensions you will need is to use the search bar. *You can also use this to find a theme for your VScode. [See several examples of themes here](https://vscodethemes.com/) that you can then search for by name.
+
+![](vscode_r_extensions.png)
+
+In addition to installing the `r program` extension, I also have installed the **R Debugger** and the **R Syntax** extensions. These add some additional tools when using `r program`. 
+
+![](vscode_r_ext_page.png)
+
+You can also make sure that your GitHub Copilot is installed. There are two extensions that should be installed, `GitHub Copilot` and the `GitHub Copilot Chat` extension. 
+
+![](vscode_copilot_extensions.png)
+
+From these instructions, you will want to install the `languageServer` and the `httpgd` packages. You can also install the `radian` package if you would like; however, the trade-offs are not much better for the amount of effort to get it working in VSCode.
+
+![](vscode_terminal.png)
+
+To install these packages, you can go to the top and click on `Terminal` followed up by `New Terminal`. That should open a terminal in bash, like in the screenshot below.
+
+![](bash_terminal_R.png)
+
+![](r_interactive_terminal.png)
+
+![](install_languageserver.png)
+
+![](httpgd_version_error.png)
+
+![](httpgd_developmental.png)
+
+You can get the `httpgd` package by first installing the `remotes` package. This will then allow you to install the development version from GitHub. If you want to follow along with the instructions from the developer(s) of the h`httpgd` package, you can [follow the installation instructions here](https://github.com/nx10/httpgd). 
+
+Lastly, I will show some extra customizable settings to make VSCode similar to using RStudio. Below are some settings that you can change in your `settings.json` file. You can also change the settings by going to the gear (see directions below) to make changes to your VSCode. 
+
+1. Making Changes by Settings Tab
+
+![](settings_tab.png)
+
+![](click_on_settings.png)
+
+![](settings_r.png)
+
+![](use_httpgd.png)
+
+2. Making Changes Using the settings.json File
+
+To get to the `settings_json` file, you will use the following keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P). This will open the command palette where you can then search for `Preferences: Open User Settings (JSON)`. Here you can then copy and paste the code below to use the `httpgd` package and tab 2 spaces rather than the default 4. If you change your theme, this will also show up here as well as preferences made for other extensions. Once you have made these changes, you can save your settings and close out of the `settings.json` file.
+
+```{txt}
+{
+  "editor.tabSize": 2,
+  "r.plot.defaults.fullWindowMode": true,
+  "r.plot.useHttpgd": true,
+}
+```
+
+![](settings_json.png)
+
+
+Another preference is to include shortcuts for some common RStudio shortcuts. The main two are being able to comment in/out code in your `r program` scripts. Similar to RStudio, you can add the shortcuts below using the `keybindings.json` file. 
+
+You will use the keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P) to get to the command palette again. Here you can search for the `Preferences: Open Keyboard Shortcuts (JSON)` and copy and paste the code below. **Note** Be aware that if you do not have $ version 4.1.0 of greater, you will need to change the `{ "text": "|>" }` to `{ "text": "%>%" }`. You can then save the file and close out and you should be able to use these shortcuts. 
+
+```{txt}
+[
+  {
+    "key": "ctrl+shift+c",
+    "command": "editor.action.commentLine",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+m",
+    "command": "type",
+    "args": { "text": "|>" },
+    "when": "editorTextFocus && editorLangId == 'r'"
+  }
+]
+```
+
+To make changes to any other shortcuts, you can use the command palette to search `Keyboard Shortcuts` to change any other shortcuts. **Note** Be aware that you could possibly overwrite other important VSCode functions so be cautious when making changes. You can type in the shortcut you want to create in the search bar at the top to see what current functions use that shortcut.
+
+![](list_keyboard_shortcuts.png)
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+# Download Zip File
+
+To get all the materials for the `r course` workshop, you will want to [download the Zip file here](`r github_repo`). 
+
+![](download_zip.png)
+
+![](created_project_folder.png)
+
+![](project_folder.png)
+
+![](find_data_folder.png)
+
+![](selecting_folder.png)
+
+![](within_project.png)
+
+![](lesson_rmd_open.png)
+
+
+```{=typst}
+#line(length: 100%)
+```
+-   [] Install GitHub
+-   [] Sign up for GitHub Copilot
+-   [] Install `r program`
+-   [] Install Visual Studio (VS) Code
+-   [] Adjust VSCode to work with `r program`
+-   [] Download Zip file
+
+
+
+
+
+
+# Python Specifics
+
+1. Go to anaconda to download Python
+2. Sign up (can go through Google, entering the information, or GitHub)
+3. Verify your Email Address 
+4. Choosing installer
+- miniconda has conda and Python, Anaconda has Python, conda, pycharm (different IDE; similar to VSCode), and other programs
+
+Linux Installation 
+
+Go here (https://www.anaconda.com/docs/getting-started/miniconda/install)
+
+Find the linux code to install miniconda
+
+```{txt}
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
+
+You can then install the file by running the following code and answering the prompts in the terminal. You can answer yes and press enter to keep the default values. 
+
+```{txt}
+bash ~/Miniconda3-latest-Linux-x86_64.sh
+```
+
+Closing out of your terminal, you will be ready to use Python in VSCode.
+
+Choosing an intepreter
+
+Go to the command palette (Windows/Linxu: Ctrl + Shift + P; Mac: Cmd + Shift + P) and search for `Python: Select Interpreter`. 
+
+
+Now when you open a bash terminal, you will see that it starts with:
+
+```{txt}
+source <miniconda-path-location>/bin/activate base
+```
+
+That means you are now using conda as your Python interpreter. This should translate to using the Jupyter notebook for the workshop materials.
+
+More information can be found on [environments here](https://code.visualstudio.com/docs/python/environments), as well as [general start up assistance with Python in VSCode](https://code.visualstudio.com/docs/python/python-quick-start).
