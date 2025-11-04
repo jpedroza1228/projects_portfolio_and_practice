@@ -318,17 +318,19 @@ If you want to double check the status of your R installation, you can type `R -
 
 ![](r_interactive_terminal.png)
 
-The easiest way to 
-
-From these instructions, you will want to install the `languageServer` and the `httpgd` packages. You can also install the `radian` package if you would like; however, the trade-offs are not much better for the amount of effort to get it working in VSCode.
+The easiest way to install the `languageserver` and `httpgd` packages is by going to the right side of your terminal and clicking on the dropdown menu and choosing a `R Terminal`. As mentioned in the documentation for the R extension, you can install the `radian` package and make the appropriate changes in the settings.
 
 ![](install_languageserver.png)
 
+As this is now a R terminal, you can install the languageserver package by using `install.packages("languageserver")`. 
+
 ![](httpgd_version_error.png)
+
+When installing the `httpgd` package, I have found some issues when trying to install it from newer versions of `r program`. If you experience these issues, you should install the development version of the package.
 
 ![](httpgd_developmental.png)
 
-You can get the `httpgd` package by first installing the `remotes` package. This will then allow you to install the development version from GitHub. If you want to follow along with the instructions from the developer(s) of the h`httpgd` package, you can [follow the installation instructions here](https://github.com/nx10/httpgd). 
+You can get the `httpgd` package by first installing the `remotes` package (using the typical method of `install.packages("remotes")`). This will then allow you to install the development version from GitHub. If you want to follow along with the instructions from the developer(s) of the `httpgd` package, you can [follow the installation instructions here](https://github.com/nx10/httpgd). 
 
 Lastly, I will show some extra customizable settings to make VSCode similar to using RStudio. Below are some settings that you can change in your `settings.json` file. You can also change the settings by going to the gear (see directions below) to make changes to your VSCode. 
 
@@ -336,15 +338,23 @@ Lastly, I will show some extra customizable settings to make VSCode similar to u
 
 ![](settings_tab.png)
 
+At the bottom of the sidebar you will see a gear. Clicking on the gear will open options for customizing your VSCode. 
+
 ![](click_on_settings.png)
+
+Clicking on settings will show you everything that you can alter in VSCode. 
 
 ![](settings_r.png)
 
+To make changes to `r program` in VSCode, you will type out `r program`. in the search bar. 
+
 ![](use_httpgd.png)
+
+For your purposes, you can scroll through the R options until you find the `Use Httpgd` option and click on the check box. 
 
 2. Making Changes Using the settings.json File
 
-To get to the `settings_json` file, you will use the following keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P). This will open the command palette where you can then search for `Preferences: Open User Settings (JSON)`. Here you can then copy and paste the code below to use the `httpgd` package and tab 2 spaces rather than the default 4. If you change your theme, this will also show up here as well as preferences made for other extensions. Once you have made these changes, you can save your settings and close out of the `settings.json` file.
+The second option is to use the `settings.json` file. To get to the `settings_json` file, you will use the following keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P). This will open the command palette where you can then search for `Preferences: Open User Settings (JSON)`. Here you can then copy and paste the code below to use the `httpgd` package and tab 2 spaces rather than the default 4. If you change your theme, this will also show up here as well as preferences made for other extensions. Once you have made these changes, you can save your settings and close out of the `settings.json` file.
 
 ```{txt}
 {
@@ -356,10 +366,9 @@ To get to the `settings_json` file, you will use the following keybinding shortc
 
 ![](settings_json.png)
 
-
 Another preference is to include shortcuts for some common RStudio shortcuts. The main two are being able to comment in/out code in your `r program` scripts. Similar to RStudio, you can add the shortcuts below using the `keybindings.json` file. 
 
-You will use the keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P) to get to the command palette again. Here you can search for the `Preferences: Open Keyboard Shortcuts (JSON)` and copy and paste the code below. **Note** Be aware that if you do not have $ version 4.1.0 of greater, you will need to change the `{ "text": "|>" }` to `{ "text": "%>%" }`. You can then save the file and close out and you should be able to use these shortcuts. 
+You will use the keybinding shortcut (Windows/Linux: Ctrl + Shift + P, Mac: Cmd + Shift + P) to get to the command palette again. Here you can search for the `Preferences: Open Keyboard Shortcuts (JSON)` and copy and paste the code below. **Note** Be aware that if you do not have `r program` version 4.1.0 or greater, you will need to change the `{ "text": "|>" }` to `{ "text": "%>%" }`. You can then save the file and close out and you should be able to use these shortcuts. 
 
 ```{txt}
 [
@@ -384,41 +393,58 @@ To make changes to any other shortcuts, you can use the command palette to searc
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
--   [] Install `r program`
--   [] Install Visual Studio (VS) Code
--   [] Adjust VSCode to work with `r program`
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
+-   [X] Install `r program`
+-   [X] Install Visual Studio (VS) Code
+-   [X] Adjust VSCode to work with `r program`
 -   [] Download Zip file
 
 # Download Zip File
 
-To get all the materials for the `r course` workshop, you will want to [download the Zip file here](`r github_repo`). 
+To get all the materials for the `r course` workshop, you will want to download the [Zip file here](`r github_repo`). 
+
+**Note** You may want to wait until the day of your workshop to make sure you download the most recent version of the contents. 
 
 ![](download_zip.png)
 
+Once you are at the D-Lab GitHub repository for the `r course` workshop, you will go to the green button that says `<Code>` with a dropdown menu. Clicking on the button will give you options for how to put the repository's contents on your local computer. For now, you can Click on the Download ZIP to download a ZIP file. The ZIP file should then be in your Downloads folder. There you can extract the contents of the ZIP file. 
+
 ![](created_project_folder.png)
+
+Once you have extracted the contents of your ZIP file. I put all of the contents in a new folder. You can put this folder wherever it makes sense to you. I have my folder (which I named example_vscode) under my username folder. You can create the folder on your Desktop for easy access or within your Documents folder if you would like.
 
 ![](project_folder.png)
 
+Within the folder, I copied and pasted everything from the ZIP file into this folder. The files should look similar to the screenshot above.
+
 ![](find_data_folder.png)
+
+Now you can open VSCode and click on the folder tab on the left sidebar. There you can click on the option `Open Folder` to open the folder with the workshop contents.
 
 ![](selecting_folder.png)
 
+In my case, I will look for my `example_vscode` folder and click select at the bottom to start VSCode from this folder.
+
 ![](within_project.png)
+
+Once you select your folder, your VSCode will populate with your workshop files on the left and a tab on the right for your prompts with GitHub Copilot. 
 
 ![](lesson_rmd_open.png)
 
+Finally, you can click on the `lessons` folder on the left and click on your notebook.
+
+Congrats! You are now ready for your `r course` workshop.
 
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
--   [] Install `r program`
--   [] Install Visual Studio (VS) Code
--   [] Adjust VSCode to work with `r program`
--   [] Download Zip file
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
+-   [X] Install `r program`
+-   [X] Install Visual Studio (VS) Code
+-   [X] Adjust VSCode to work with `r program`
+-   [X] Download Zip file
 
 
 

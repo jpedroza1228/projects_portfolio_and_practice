@@ -28,6 +28,10 @@ github_repo <- glue::glue("https://github.com/dlab-berkeley/AI-Assisted-Coding-I
 
 When these are completed, you are ready for your `r course` workshop.
 
+```{=typst}
+#pagebreak()
+```
+
 # Installing GitHub
 
 Go to [GitHub](https://github.com/) and sign up for a GitHub account.
@@ -40,77 +44,40 @@ At this page, you will sign up for GitHub with your `@berkeley.edu` email accoun
 -   Try and keep it short, you may have to type it a lot
 -   Keep everything lowercase. If you really want to separate words, use a hyphen (-) or an underscore (\_)
 
-Once you sign in, you will be at your dashboard. You will come back to GitHub shortly to copy the information for the workshop materials.
-
 ![](github_dashboard.png)
 
-At the top, you'll see the dropdown menu for your repositories and your profile.
+Once you sign in, you will be at your dashboard. You have now downloaded GitHub! Congrats!
 
-![](github_dashboard_top.png)
+## Optional: Two-Factor Authentication (2FA)
 
-Click on your profile circle and go to your settings.
-
-![](github_settings.png)
-
-INCLUDE TEXT HERE
-
-![](github_settings_main_page.png)
-
-INCLUDE TEXT HERE
-
-![](github_billing_section.png)
-
-INCLUDE TEXT HERE
-
-![](github_ed_benefits.png)
-
-INCLUDE TEXT HERE
-
-![](github_ed_benefits_application.png)
-
-INCLUDE TEXT HERE
-
-![](github_share_location.png)
-
-INCLUDE TEXT HERE
-
-![](ucpath_main_page.png)
-
-INCLUDE TEXT HERE
-
-![](ucpath_verification.png)
-
-INCLUDE TEXT HERE
-
-![](ucpath_generate_report.png)
-
-INCLUDE TEXT HERE
-
-![](github_ed_submitted.png)
-
-INCLUDE TEXT HERE
-
-![](github_ed_approved.png)
-
-INCLUDE TEXT HERE
-
-![](github_add_email.png)
-
-
-## Adding Additional Email Addresses
-
-### Optional Two-Factor Authentication (2FA)
+While not part of the tutorial, GitHub can house public and private data. If you are planning on continuing to use GitHub, please think about creating additional safeguards by setting up your Two-Factor Authentication (2FA). Below are some resources and a quick look into 2FA.
 
 For more information on 2FA, you can find resources [here (About 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/about-two-factor-authentication) or [here (Securing account with 2FA)](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa).
 
+![](github_settings.png)
+
+From your dashboard, you will want to to to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
+
+![](github_dropdown_settings.png)
+
+At this dropdown menu, you will go to your `Settings`.
+
+![](github_settings_main_page.png)
+
+At your settings, there will be a lot of information. 
+
 ![](github_settings_pw.png)
 
+On the left sidebar, you will want to go to `Password and authentication`. Here you can customize how you would like to sign into GitHub.
+
 ![](github_2fa.png)
+
+While there are options for 2FA, I would recommend using an authenticator app. So every time you sign in (among other actions on GitHub), you will sign in with your username and password then verify it with a code from your authenticator app.
 
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
+-   [X] Install GitHub
 -   [] Sign up for GitHub Copilot
 -   [] Install `r program`
 -   [] Install Visual Studio (VS) Code
@@ -121,23 +88,77 @@ For more information on 2FA, you can find resources [here (About 2FA)](https://d
 
 Signing up for GitHub Copilot will depend on whether you plan to sign up for the free version, CoPilot *Pro* using verified information, or pay for a Pro plan ([see pricing information here](https://github.com/features/copilot/plans)).
 
-## Copilot Pro (Instructions for Verification)
-
-To get Copilot *Pro* for teachers and students (for free) you need to [apply here](https://education.github.com/discount_requests/application)
-
 ## Free Version
 
-The free version of GitHub Copilot comes with VSCode. You can install the necessary extensions in the following section.
+The free version of GitHub Copilot comes with VSCode. You can install the necessary extensions in the following section. You can also try out a [30-day trial here](https://github.com/github-copilot/pro).
 
-## Copilot TLDR
+## Copilot Pro (Instructions for Verification)
 
-1.  Sign up for Copilot *Pro* using student/teacher verification, paying a monthly fee, or using the free version.
+To get Copilot *Pro* for teachers and students (for free), you will need to follow the following steps. Below are some steps from the optional 2FA section above.
+
+![](github_settings.png)
+
+From your dashboard, you will want to to to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
+
+![](github_dropdown_settings.png)
+
+At this dropdown menu, you will go to your `Settings`.
+
+![](github_settings_main_page.png)
+
+At your settings, there will be a lot of information. This time, you will click on the dropdown menu for `Billing and licensing`.
+
+![](github_billing_section.png)
+
+From the dropdown menu, you will click on `Education benefits`.
+
+![](github_ed_benefits.png)
+
+Clicking on `Education benefits` will take you to `GitHub Education`. There you will start your application to get additional benefits, including GitHub Copilot Pro.
+
+![](github_ed_benefits_application.png)
+
+Once you start your application, you will have the option of choosing your role At UC Berkeley. Below are general instructions for teachers and students; however, the instructions below will start to shift toward specific instructions for teachers. 
+
+On the application, you can include the full name of the university (University of California, Berkeley) and when given an option to Select a school, click `Select this school`. You will also include your school email address in the dropdown menu. Make sure you are including your `@berkeley.edu` email address since verification relies on that email address.
+
+![](github_share_location.png)
+
+You will also be asked to share your location, which will then allow you to click on `Continue` and finish this section of the application. You will then be asked for additional information in the form of proof of you being associated with UC Berkeley. The following information will be for teacher roles.
+
+You will need to provide proof of your affiliation. **This proof must have your name, a current date, and the name of your institution on it**. If your application is rejected, it is most likely because your proof of affiliation was missing one of these three things (but, you can always apply again with new proof!). For example, some UC Berkeley student IDs do not have a date on them, so they will not be accepted. You may also have to follow some additional steps to verify your GitHub account, make sure to check your email for instructions. **Note** We have also heard of a bug that results in .png files not being accepted while .jpeg files are.
+
+If you are a UC Berkeley student, the most straightforward way to get proof is to download a certificate of enrollment verification by going to CalCentral --> My Academics --> Enrollment Verification (under Academic Records) --> View or Print Enrollment via Self Service --> Obtain an enrollment certificate. This will give you a PDF enrollment certificate which you can screenshot and submit for proof of affiliation (you need to use a screenshot because the application does not accept PDFs).
+
+![](ucpath_main_page.png)
+
+For teacher roles, you will need to go to UCPath.
+
+![](ucpath_verification.png)
+
+From the main page, you will want to click on `Income & Taxes` and go to `Verification of Employment` under `Payroll Information`. 
+
+![](ucpath_generate_report.png)
+
+To get verification of your employment, you will then go to the bottom of the page and click on `Generate Summary Report`. You will be showed a pdf with your title, the current date of when you generated report (today's date), and other information. Since you cannot submit PDFs, make sure you get a screenshot of the report and save it as a **.jpg** file. 
+
+![](github_ed_submitted.png)
+
+Once you have submitted your proof, your application will show that it is Pending.
+
+![](github_ed_approved.png)
+
+After some time, it will state that you are approved. This is not a full approval, and full approval will take some time to gain access to Copilot Pro.
+
+## Section on Getting Copilot Set Up (NEEDS WORK --> WAITING ON ACCESS)
+
+NEED TEXT HERE
 
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
 -   [] Install `r program`
 -   [] Install Visual Studio (VS) Code
 -   [] Adjust VSCode to work with `r program`
@@ -145,35 +166,40 @@ The free version of GitHub Copilot comes with VSCode. You can install the necess
 
 # Installing `r program`
 
-To install `r program`, you will go to [The Comprhensive R Archive Network (CRAN) website](https://cloud.r-project.org/). There you can download `r program` for your operating system.
+![](py_download.png)
 
-### Mac
+For the purposes of this workshop, we will use [anaconda to download Python](https://www.anaconda.com/download). Follow the directions to sign up and verify your email address.
 
-Follow the directions for installing `r program`. You can keep the defaults for everything. When installed, you should see a message stating `The installation was successful.` 
+![](py_diff_installers.png)
 
-### Windows
+When you get to the option of installing Distribution Installers or Miniconda Installers, the Distribution Installers will install Anaconda, which will provide additional tools, including a different program similar to VSCode. You may only want to install miniconda, which will include conda (the environment and Python interpreter) and Python itself. 
 
-Follow the directions for installing `r program`. You can keep the defaults for everything. When installed, you should see a message stating `The installation was successful.`
+## Linux Installation
 
-### Linux
+For Linux users, miniconda installation looks a little different.There is a tutorial on how to [install miniconda here](https://www.anaconda.com/docs/getting-started/miniconda/install#linux-terminal-installer). 
 
-There are some really good instructions on how to [install R here](https://cloud.r-project.org/bin/linux/ubuntu/#user). 
+![](miniconda_install.png)
+
+Following those instructions, answering the prompts in the terminal, and running the code in the instructions (the same code is below.) You will want to run each line separately since there are prompts that you need to answer.
 
 ```{txt}
-sudo apt update
-sudo apt install -y build-essential libcurl4-openssl-dev libssl-dev libxml2-dev
-
-# optionally
-# sudo apt install -y libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
 
+```{txt}
+bash ~/Miniconda3-latest-Linux-x86_64.sh
+```
+
+```{txt}
+source ~/.bashrc
+```
 
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
--   [] Install `r program`
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
+-   [X] Install `r program`
 -   [] Install Visual Studio (VS) Code
 -   [] Adjust VSCode to work with `r program`
 -   [] Download Zip file
@@ -239,16 +265,62 @@ When you installed VSCode, it should have brought you to the documentation page.
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
--   [] Install `r program`
--   [] Install Visual Studio (VS) Code
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
+-   [X] Install `r program`
+-   [X] Install Visual Studio (VS) Code
 -   [] Adjust VSCode to work with `r program`
 -   [] Download Zip file
 
 # Setting up `r program` in VSCode
 
 **Note** Your VSCode will look slightly different, as the screenshots are from a custom VSCode theme. Additionally, the ordering and number of tabs on the sidebar may be different from the VSCode default. 
+
+# Choosing an intepreter
+
+![](select_interpreter.png)
+
+Go to the command palette (Windows/Linxu: Ctrl + Shift + P; Mac: Cmd + Shift + P) and search for `Python: Select Interpreter`. 
+
+![](conda_interpreter.png)
+
+Choose your conda environment. It should state `Conda` on the right side. Other versions seen are from 
+
+![](miniconda_base.png)
+
+Now when you open a bash terminal, you will see that it starts with:
+
+```{txt}
+source <miniconda-path-location>/bin/activate base
+```
+
+That means you are now using conda as your Python interpreter. This should translate to using the Jupyter notebook for the workshop materials.
+
+More information can be found on [environments here](https://code.visualstudio.com/docs/python/environments), as well as [general start up assistance with Python in VSCode](https://code.visualstudio.com/docs/python/python-quick-start).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Depending on the version of `r program` you installed, there may be some issues in incorporating some of the packages. I will include alternatives to try and make sure everything works. 
 
@@ -353,75 +425,46 @@ To make changes to any other shortcuts, you can use the command palette to searc
 
 # Download Zip File
 
-To get all the materials for the `r course` workshop, you will want to [download the Zip file here](`r github_repo`). 
+To get all the materials for the `r course` workshop, you will want to download the [Zip file here](`r github_repo`). 
+
+**Note** You may want to wait until the day of your workshop to make sure you download the most recent version of the contents. 
 
 ![](download_zip.png)
 
+Once you are at the D-Lab GitHub repository for the `r course` workshop, you will go to the green button that says `<Code>` with a dropdown menu. Clicking on the button will give you options for how to put the repository's contents on your local computer. For now, you can Click on the Download ZIP to download a ZIP file. The ZIP file should then be in your Downloads folder. There you can extract the contents of the ZIP file. 
+
 ![](created_project_folder.png)
+
+Once you have extracted the contents of your ZIP file. I put all of the contents in a new folder. You can put this folder wherever it makes sense to you. I have my folder (which I named example_vscode) under my username folder. You can create the folder on your Desktop for easy access or within your Documents folder if you would like.
 
 ![](project_folder.png)
 
+Within the folder, I copied and pasted everything from the ZIP file into this folder. The files should look similar to the screenshot above.
+
 ![](find_data_folder.png)
+
+Now you can open VSCode and click on the folder tab on the left sidebar. There you can click on the option `Open Folder` to open the folder with the workshop contents.
 
 ![](selecting_folder.png)
 
+In my case, I will look for my `example_vscode` folder and click select at the bottom to start VSCode from this folder.
+
 ![](within_project.png)
+
+Once you select your folder, your VSCode will populate with your workshop files on the left and a tab on the right for your prompts with GitHub Copilot. 
 
 ![](lesson_rmd_open.png)
 
+Finally, you can click on the `lessons` folder on the left and click on your notebook.
+
+Congrats! You are now ready for your `r course` workshop.
 
 ```{=typst}
 #line(length: 100%)
 ```
--   [] Install GitHub
--   [] Sign up for GitHub Copilot
--   [] Install `r program`
--   [] Install Visual Studio (VS) Code
--   [] Adjust VSCode to work with `r program`
--   [] Download Zip file
-
-
-
-
-
-
-# Python Specifics
-
-1. Go to anaconda to download Python
-2. Sign up (can go through Google, entering the information, or GitHub)
-3. Verify your Email Address 
-4. Choosing installer
-- miniconda has conda and Python, Anaconda has Python, conda, pycharm (different IDE; similar to VSCode), and other programs
-
-Linux Installation 
-
-Go here (https://www.anaconda.com/docs/getting-started/miniconda/install)
-
-Find the linux code to install miniconda
-
-```{txt}
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-```
-
-You can then install the file by running the following code and answering the prompts in the terminal. You can answer yes and press enter to keep the default values. 
-
-```{txt}
-bash ~/Miniconda3-latest-Linux-x86_64.sh
-```
-
-Closing out of your terminal, you will be ready to use Python in VSCode.
-
-Choosing an intepreter
-
-Go to the command palette (Windows/Linxu: Ctrl + Shift + P; Mac: Cmd + Shift + P) and search for `Python: Select Interpreter`. 
-
-
-Now when you open a bash terminal, you will see that it starts with:
-
-```{txt}
-source <miniconda-path-location>/bin/activate base
-```
-
-That means you are now using conda as your Python interpreter. This should translate to using the Jupyter notebook for the workshop materials.
-
-More information can be found on [environments here](https://code.visualstudio.com/docs/python/environments), as well as [general start up assistance with Python in VSCode](https://code.visualstudio.com/docs/python/python-quick-start).
+-   [X] Install GitHub
+-   [X] Sign up for GitHub Copilot
+-   [X] Install `r program`
+-   [X] Install Visual Studio (VS) Code
+-   [X] Adjust VSCode to work with `r program`
+-   [X] Download Zip file
