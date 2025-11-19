@@ -56,7 +56,7 @@ For more information on 2FA, you can find resources [here (About 2FA)](https://d
 
 ![](github_settings.png)
 
-From your dashboard, you will want to to to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
+From your dashboard, you will want to go to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
 
 ![](github_dropdown_settings.png)
 
@@ -98,7 +98,7 @@ To get Copilot *Pro* for teachers and students (for free), you will need to foll
 
 ![](github_settings.png)
 
-From your dashboard, you will want to to to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
+From your dashboard, you will want to go to your profile. If you just created your account, you will not have a profile picture. You'll then click on your profile circle to show a dropdown menu.
 
 ![](github_dropdown_settings.png)
 

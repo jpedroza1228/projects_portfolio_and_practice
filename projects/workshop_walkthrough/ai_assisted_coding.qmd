@@ -17,6 +17,9 @@ course <- glue::glue("AI-Assisted-Coding-In-{program}")
 github_repo <- glue::glue("https://github.com/dlab-berkeley/AI-Assisted-Coding-In-{program}/tree/main")
 ```
 
+**If you are having any issues with installing anything for the workshop, think about [submitting a consulting request](https://dlab.berkeley.edu/consulting/submit-consulting-request) where D-Lab consultants can help you get prepared for your workshop.**
+
+
 # Checklist of Everything Needed to Install for `r course`
 
 -   [] Install GitHub
@@ -31,6 +34,7 @@ When these are completed, you are ready for your `r course` workshop.
 ```{=typst}
 #pagebreak()
 ```
+
 
 # Installing GitHub
 
@@ -84,7 +88,7 @@ While there are options for 2FA, I would recommend using an authenticator app. S
 -   [] Adjust VSCode to work with `r program`
 -   [] Download Zip file
 
-# Sign Up for GitHub Copilot (THIS SECTION NEEDS WORK)
+# Sign Up for GitHub Copilot
 
 Signing up for GitHub Copilot will depend on whether you plan to sign up for the free version, CoPilot *Pro* using verified information, or pay for a Pro plan ([see pricing information here](https://github.com/features/copilot/plans)).
 
@@ -104,7 +108,7 @@ From your dashboard, you will want to to to your profile. If you just created yo
 
 At this dropdown menu, you will go to your `Settings`.
 
-![](github_settings_main_page.png)
+![](github_settings_main_page2.png)
 
 At your settings, there will be a lot of information. This time, you will click on the dropdown menu for `Billing and licensing`.
 
@@ -196,9 +200,8 @@ sudo apt install -y build-essential libcurl4-openssl-dev libssl-dev libxml2-dev
 # sudo apt install -y libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 ```
 
-```{=typst}
-#line(length: 100%)
-```
+-----------------------------------------------------------------------------------------
+
 -   [X] Install GitHub
 -   [X] Sign up for GitHub Copilot
 -   [X] Install `r program`
@@ -212,13 +215,13 @@ Let's move forward with installing VSCode. You can install [VSCode here](https:/
 
 ### Mac
 
-Link: https://code.visualstudio.com/docs/setup/mac
+[Link for Mac install](https://code.visualstudio.com/docs/setup/mac)
 
 Follow the directions to install VSCode. Below, I will include some helpful tips for VSCode extensions that may help when using `r program`.
 
 ### Windows
 
-Link: https://code.visualstudio.com/docs/setup/windows
+[Link for Windows install](https://code.visualstudio.com/docs/setup/windows)
 
 Follow the directions to install VSCode. Below, I will include some helpful tips for VSCode extensions that may help when using `r program`. **For Windows users, it is recommended to check “Save version number in registry” during installation so that the R extension can find your R installation automatically. If you have not done this you may need to add the location of your R to your PATH manually (see FAQ 3.1 I am using windows and my VS Code can’t find R!).**
 
@@ -233,7 +236,7 @@ System:
 
 ```
 
-Link: https://code.visualstudio.com/docs/setup/linux
+[Link for Linux](https://code.visualstudio.com/docs/setup/linux)
 
 **Option 1: Use the Link**
 
@@ -406,9 +409,13 @@ To get all the materials for the `r course` workshop, you will want to download 
 
 **Note** You may want to wait until the day of your workshop to make sure you download the most recent version of the contents. 
 
-![](download_zip.png)
+![](download_zip1.png)
 
-Once you are at the D-Lab GitHub repository for the `r course` workshop, you will go to the green button that says `<Code>` with a dropdown menu. Clicking on the button will give you options for how to put the repository's contents on your local computer. For now, you can Click on the Download ZIP to download a ZIP file. The ZIP file should then be in your Downloads folder. There you can extract the contents of the ZIP file. 
+Once you are at the D-Lab GitHub repository for the `r course` workshop, you will go to the green button that says `<Code>` with a dropdown menu. Clicking on the button will give you options for how to put the repository's contents on your local computer. 
+
+![](download_zip2.png)
+
+For now, you can Click on the Download ZIP to download a ZIP file. The ZIP file should then be in your Downloads folder. There you can extract the contents of the ZIP file. 
 
 ![](created_project_folder.png)
 
