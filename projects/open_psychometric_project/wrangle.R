@@ -1,6 +1,6 @@
-library(tdfyverse)
+library(tidyverse)
 
-df <- read_delim(here::here("projects/open_psychometric_project/data/data.csv")) |>
+df <- read_delim(here::here("projects/open_psychometric_project/data/right_wing/data.csv")) |>
   janitor::clean_names()
 
 theme_set(theme_light())
@@ -14,111 +14,74 @@ react_table <- function(data){
   )
 }
 
-psych::describe(df$age, na.rm = TRUE)
+glimpse(df)
 
+df <- 
+df |>
+  filter(
+    q1 != 0 &
+    q2 != 0 &
+    q3 != 0 &
+    q4 != 0 &
+    q5 != 0 &
+    q6 != 0 &
+    q7 != 0 &
+    q8 != 0 &
+    q9 != 0 &
+    q10 != 0 &
+    q11 != 0 &
+    q12 != 0 &
+    q13 != 0 &
+    q14 != 0 &
+    q15 != 0 &
+    q16 != 0 &
+    q17 != 0 &
+    q18 != 0 &
+    q19 != 0 &
+    q20 != 0 &
+    q21 != 0 &
+    q22 != 0 &
+    (
+      vcl6 != 1 |
+      vcl9 != 1 |
+      vcl12 != 1
+  )
+)
+
+df |> count(q1)
 
 df <- 
 df |> 
   mutate(
     across(
-      matches("^as"),
+      matches("^q"),
       ~case_when(
-        .x %in% c(1, 2) ~ -1,
-        .x == 3 ~ 0,
-        .x %in% c(4, 5) ~ 1
-      )
-    ),
-    # across(
-    #   matches("^as.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_dis"
-    # ),
-    # across(
-    #   matches("^as.*\\d$"),
-    #   ~if_else(.x == 2, 1, 0),
-    #   .names = "{.col}_neu"
-    # ),
-    # across(
-    #   matches("^as.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_ag"
-    # ),
-    across(
-      matches("^sc"),
-      ~case_when(
-        .x %in% c(1, 2) ~ 1,
-        .x == 3 ~ 0,
-        .x %in% c(4, 5) ~ 1
-      )
-    ),
-    # across(
-    #   matches("^sc.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_dis"
-    # ),
-    # across(
-    #   matches("^sc.*\\d$"),
-    #   ~if_else(.x == 2, 1, 0),
-    #   .names = "{.col}_neu"
-    # ),
-    # across(
-    #   matches("^sc.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_ag"
-    # ),
-    across(
-      matches("^ad"),
-      ~case_when(
-        .x %in% c(1, 2) ~ -1,
-        .x == 3 ~ 0,
-        .x %in% c(4, 5) ~ 1
-      )
-    ),
-    # across(
-    #   matches("^ad.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_dis"
-    # ),
-    # across(
-    #   matches("^ad.*\\d$"),
-    #   ~if_else(.x == 2, 1, 0),
-    #   .names = "{.col}_neu"
-    # ),
-    # across(
-    #   matches("^ad.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_ag"
-    # ),
-    across(
-      matches("^do"),
-      ~case_when(
-        .x %in% c(1, 2) ~ -1,
-        .x == 3 ~ 0,
-        .x %in% c(4, 5) ~ 1
-      )
+        .x %in% c(1, 2, 3, 4) ~ 1,
+        .x == 5 ~ 2,
+        .x %in% c(6, 7, 8, 9) ~ 3
+      ),
+      .names = "{.col}_sub"
     )
-    # across(
-    #   matches("^do.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_dis"
-    # ),
-    # across(
-    #   matches("^do.*\\d$"),
-    #   ~if_else(.x == 2, 1, 0),
-    #   .names = "{.col}_neu"
-    # ),
-    # across(
-    #   matches("^do.*\\d$"),
-    #   ~if_else(.x == 1, 1, 0),
-    #   .names = "{.col}_ag"
-    # )
   ) |>
+  rowid_to_column() |>
   select(
-    -age,
-    -gender
-    # matches("_dis$|_neu$|_ag$")
+    rowid,
+    matches(
+      "^q"
+    )
+  )
+
+df <-
+df |>
+  select(
+    -matches(
+      # "\\d$"
+      "sub$"
+    )
   ) |>
-  drop_na()
+  slice_sample(
+    n = 800
+  )
 
 #minor psychometric analyses
 set.seed(111525)
@@ -137,177 +100,26 @@ nrow(mtrain)
 nrow(mval)
 nrow(mtest)
 
-set.seed(111525)
-train_sub <- mtrain |>
-  slice_sample(prop = .5)
+# set.seed(111525)
+# train_sub <- mtrain |>
+#   slice_sample(prop = .5)
 
-train_fa <- anti_join(mtrain, train_sub)
+# train_fa <- anti_join(mtrain, train_sub)
 
-nrow(train_fa)
-nrow(train_sub)
+# nrow(train_fa)
+# nrow(train_sub)
 
-library(psych)
-library(polycor)
-library(mirt)
+library(bnlearn)
 
-efa <- fa(
-  train_fa,
-  nfactors = 4,
-  fm = "ml",
-  rotate = "oblimin"
-  )
+mtrain <- as.data.frame(mtrain)
 
-efa$loadings
-
-stan_list <- list(
-  J = nrow(y),
-  I = ncol(y),
-  Y = y
-)
-
-stan_list
-
-library(cmdstanr)
-library(posterior)
-library(bayesplot)
-
-rasch <- cmdstan_model(here::here("projects/open_psychometric_project/rasch_model.stan"))
-
-set.seed(12345)
-fit <- rasch$sample(
-  data = stan_list,
-  seed = 12345,
-  chains = 4,
-  iter_warmup = 2000,
-  iter_sampling = 2000,
-  # adapt_delta = .99,
-  parallel_chains = parallel::detectCores() - 1
-)
-
-# saveRDS(fit, here::here("projects/open_psychometric_project/rasch_fit_100n.RDS"))
-
-
-fit_df <- fit$draws() |> as_draws_df()
-
-fit_df |>
-  select(
-    matches(
-      "theta"
-    )
-  ) |>
-  summarize(
-    across(
-      everything(),
-      ~mean(.x, na.rm = TRUE)
-    )
-  ) |>
-  pivot_longer(
-    everything()
-  )
-
-fit_df |>
-  select(
-    matches(
-      "b"
-    )
-  ) |>
-  summarize(
-    across(
-      everything(),
-      ~mean(.x, na.rm = TRUE)
-    )
-  ) |>
-  pivot_longer(
-    everything()
-  )
-
-mcmc_trace(
-  fit_df |> 
-  select(
-    matches("theta")
-    ) |>
-    select(
-      20:40
-    )
-)
-
-mcmc_intervals(
-  fit_df |> select(matches("theta"))
-)
-
-mcmc_intervals(
-  fit_df |> select(matches("b"))
-)
-
-fit_df |>
-  select(
-    matches(
-      "y_rep"
-    )
-  ) |>
-  pivot_longer(
-    everything()
-  ) |>
-  separate(
-    name,
-    into = c("drop", "keep"),
-    sep = "\\["
-  )
-
-y
-
-# R code: EFA -> Q-matrix (binary items)
-# install.packages(c("psych","polycor","mirt"))
-library(psych)       # for fa
-library(polycor)     # for tetrachoric
-library(mirt)        # alternative for factor analysis on categorical
-
-tet <- tetrachoric(sub)$rho
-
-# fa.parallel(tet, n.obs = nrow(sub), fm = "ml", fa = "fa")
-
-efa <- map(
-  1:5,
-  ~fa(
-    tet,
-    nfactors = .x,
-    fm = "ml",
-    rotate = "oblimin"
-    )
-  )
-
-
-tibble(
-  n_factors = 1:5,
-  rms = map_dbl(1:5, ~efa[[.x]]$rms),
-  crms = map_dbl(1:5, ~efa[[.x]]$crms),
-  cfi_tfi = map_dbl(1:5, ~efa[[.x]]$fit)
-)
-
-fa_find <-
-tibble(
-  att1 = efa[[3]]$loadings[1:45, 1],
-  att2 = efa[[3]]$loadings[1:45, 2],
-  att3 = efa[[3]]$loadings[1:45, 3]
-)
-
-faq <- fa_find |>
-  rowdf_to_column() |>
+mtrain <- mtrain |>
+  select(-rowid) |>
   mutate(
     across(
-      -rowdf,
-      ~case_when(
-        .x >= .3 ~ 1,
-        TRUE ~ 0
-      )
-    ),
-    att1 = case_when(
-      rowdf == 45 ~ 1,
-      TRUE ~ att1
-    ),
-    att2 = case_when(
-      rowdf == 7 ~ 1,
-      TRUE ~ att2
+      everything(),
+      ~as.factor(.x)
     )
   )
-# faq
+
+
