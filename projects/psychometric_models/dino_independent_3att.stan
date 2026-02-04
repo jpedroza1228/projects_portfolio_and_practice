@@ -1,0 +1,108 @@
+data{
+  int<lower=1> J;
+  int<lower=1> I;
+  int<lower=1> C;
+  int<lower=1> K;
+  matrix<lower=0,upper=1> [J,I] Y;
+  matrix<lower=0,upper=1> [I,K] Q;
+  matrix<lower=0,upper=1> [C,K] alpha;
+}
+parameters{
+  vector<lower=0, upper=1>[I] tp; //slip (1 - tp)
+  vector<lower=0, upper=1>[I] fp; //guess
+
+  real<lower=0,upper=1> lambda1;
+  real<lower=0,upper=1> lambda2;
+  real<lower=0,upper=1> lambda3;
+}
+transformed parameters{
+  simplex[C] nu;
+  vector[C] theta1;
+  vector[C] theta2;
+  vector[C] theta3;
+  matrix[I,C] delta;
+  matrix[I,C] pi;
+
+  for (c in 1:C) {
+    theta1[c] = (alpha[c,1] > 0) ? lambda1 : (1 - lambda1);
+    theta2[c] = (alpha[c,2] > 0) ? lambda2 : (1 - lambda2);
+    theta3[c] = (alpha[c,3] > 0) ? lambda3 : (1 - lambda3);
+    nu[c] = theta1[c] * theta2[c] * theta3[c];
+  }
+
+  vector[C] log_nu = log(nu);
+
+  for(c in 1:C){
+    for(i in 1:I){
+      delta[i, c] = pow(alpha[c,1], Q[i, 1]) * pow(alpha[c,2], Q[i, 2]) * pow(alpha[c,3], Q[i, 3]);
+    }
+  }
+
+  for (c in 1:C){
+    for (i in 1:I){
+      pi[i,c] = pow(tp[i], delta[i,c]) * pow(fp[i], (1 - delta[i,c]));
+    }
+  }
+}
+model{
+  array[C] real ps;
+  array[I] real eta;
+
+  // Priors
+  // nu ~ dirichlet(rep_vector(1.0, C));
+  lambda1 ~ beta(20,5);
+  lambda2 ~ beta(20,5);
+  lambda3 ~ beta(20,5);
+  
+  for (i in 1:I){
+    tp[i] ~ beta(20, 5);
+    fp[i] ~ beta(5, 20);
+  }
+
+  // likelihood
+  for (j in 1:J) {
+    for (c in 1:C){
+      for (i in 1:I){
+        real p = fmin(fmax(pi[i,c], 1e-9), 1 - 1e-9);
+        eta[i] = Y[j,i] * log(p) + (1 - Y[j,i]) * log1m(p);
+      }
+      ps[c] = log_nu[c] + sum(eta); 
+    }
+    target += log_sum_exp(ps);
+  }
+}
+generated quantities {
+  matrix[J,C] prob_resp_class;      // posterior probabilities of respondent j being in latent class c 
+  matrix[J,K] prob_resp_attr;       // posterior probabilities of respondent j being a master of attribute k 
+  array[I] real eta;
+  row_vector[C] prob_joint;
+  array[C] real prob_attr_class;
+  matrix[J,I] y_rep;
+
+  // likelihood
+  for (j in 1:J){
+    for (c in 1:C){
+      for (i in 1:I){
+        real p = fmin(fmax(pi[i,c], 1e-9), 1 - 1e-9);
+        eta[i] = Y[j,i] * log(p) + (1 - Y[j,i]) * log1m(p);
+      }
+      prob_joint[c] = exp(log_nu[c]) * exp(sum(eta));
+    }
+    prob_resp_class[j] = prob_joint/sum(prob_joint);
+  }
+  for (j in 1:J){
+    for (k in 1:K){
+      for (c in 1:C){
+        prob_attr_class[c] = prob_resp_class[j,c] * alpha[c,k];
+      }
+      prob_resp_attr[j,k] = sum(prob_attr_class);
+    }
+  }
+  
+  for (j in 1:J) {
+    int z = categorical_rng(nu);  // sample class for person j
+    for (i in 1:I) {
+      y_rep[j, i] = bernoulli_rng(pi[i, z]);  // generate response from item-by-class probability
+    }
+  }
+}
