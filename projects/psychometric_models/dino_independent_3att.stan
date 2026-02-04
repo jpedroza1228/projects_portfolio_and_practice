@@ -34,7 +34,7 @@ transformed parameters{
 
   for(c in 1:C){
     for(i in 1:I){
-      delta[i, c] = pow(alpha[c,1], Q[i, 1]) * pow(alpha[c,2], Q[i, 2]) * pow(alpha[c,3], Q[i, 3]);
+      delta[i, c] = 1 - (pow(1 - theta1[c], Q[i, 1]) * pow(1 - theta2[c], Q[i, 2]) * pow(1 - theta3[c], Q[i, 3]));
     }
   }
 
