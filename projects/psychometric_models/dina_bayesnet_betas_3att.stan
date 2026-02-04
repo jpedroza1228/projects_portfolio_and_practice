@@ -21,7 +21,7 @@ parameters{
 }
 transformed parameters{
   vector[C] raw_nu;
-  simplex[C] nu;   
+  simplex[C] nu;
   vector[C] theta1;
   vector[C] theta2;
   vector[C] theta3;

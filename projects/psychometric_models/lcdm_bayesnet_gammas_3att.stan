@@ -34,9 +34,6 @@ transformed parameters{
     theta1[c] = inv_logit(gamma10 + gamma11 * alpha[c,1]);
     theta2[c] = inv_logit(gamma20 + gamma21 * theta1[c]);
     theta3[c] = inv_logit(gamma30 + gamma31 * theta2[c]);
-  }
-
-  for (c in 1:C){
     nu[c] = theta1[c] * theta2[c] * theta3[c];
   }
 

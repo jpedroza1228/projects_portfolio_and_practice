@@ -8,7 +8,8 @@ data{
   matrix<lower=0,upper=1> [C,K] alpha;
 }
 parameters{
-  ordered[C] raw_nu;
+  // ordered[C] raw_nu;
+  simplex[C] nu;
   real gamma10;
   real gamma20;
   real gamma30;
@@ -25,13 +26,9 @@ parameters{
   vector[I] beta123;
 }
 transformed parameters{
-  simplex[C] nu;
-  vector[C] theta1;
-  vector[C] theta2;
-  vector[C] theta3;
   matrix[I,C] pi;
 
-  nu = softmax(raw_nu);
+  // nu = softmax(raw_nu);
   vector[C] log_nu = log(nu);
 
   for (c in 1:C){
@@ -51,10 +48,8 @@ model{
   array[I] real eta;
 
   // Priors
-  raw_nu ~ normal(0, 1);
-  gamma10 ~ normal(0, 2);
-  gamma20 ~ normal(0, 2);
-  gamma21 ~ lognormal(0, 1);
+  // raw_nu ~ normal(0,1);
+  nu ~ dirichlet(rep_vector(1.0, C));
 
   //priors for items to attributes
   for (i in 1:I){
